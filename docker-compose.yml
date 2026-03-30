@@ -1,0 +1,12 @@
+services:
+  wallet-app:
+    build: .
+    ports:
+      - "3002:3002"
+    depends_on:
+      - wallet-api
+
+  wallet-api:
+    image: wallet-api:latest
+    ports:
+      - "8080:8080"
