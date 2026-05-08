@@ -2,6 +2,22 @@
 
 A mobile-first React frontend for the [wallet-api](https://github.com/jeffgicharu/wallet-api). This is the customer-facing app where users check their balance, send money, deposit, withdraw, and view transaction history. Built to look and feel like a real mobile money app.
 
+## Live Demo
+
+- **Web app:** https://wallet.jeffgicharu.com
+- **API:** https://api.wallet.jeffgicharu.com
+- **Swagger UI:** https://api.wallet.jeffgicharu.com/swagger-ui.html
+
+Demo accounts (state resets daily at 03:00 UTC):
+
+| Email | Password | PIN | Approx. balance |
+|---|---|---|---|
+| `alice@demo.local` | `pass1234` | `1234` | KES 50,000 |
+| `bob@demo.local`   | `pass1234` | `1234` | KES 25,000 |
+| `carol@demo.local` | `pass1234` | `1234` | KES 10,000 |
+
+This is a public demo. Do not use real PII, real money, or real credentials.
+
 The key difference from the other two frontends (merchant-dashboard and lending-portal) is that this one is designed for phones: bottom tab navigation, touch-friendly buttons, a custom numeric PIN pad, mobile-width layout, and transaction flows that work like step-by-step wizards.
 
 ## What It Does
@@ -57,6 +73,16 @@ npm run dev
 ```
 
 Proxies `/api/*` to `http://localhost:8080` (wallet-api).
+
+## Configuration
+
+The API base URL is read from `VITE_API_BASE_URL` at build time and falls back to `/api` so the Vite dev server's proxy keeps working without any setup. Override it for production builds:
+
+```bash
+VITE_API_BASE_URL=https://api.wallet.jeffgicharu.com/api npm run build
+```
+
+Anything you set is used as the axios `baseURL`, so include the `/api` segment that the wallet-api Spring controllers expect.
 
 ## Screens
 
