@@ -5,8 +5,8 @@ A mobile-first React frontend for the [wallet-api](https://github.com/jeffgichar
 ## Live Demo
 
 - **Web app:** https://wallet.jeffgicharu.com
-- **API:** https://api.wallet.jeffgicharu.com
-- **Swagger UI:** https://api.wallet.jeffgicharu.com/swagger-ui.html
+- **API:** https://wallet-api.jeffgicharu.com
+- **Swagger UI:** https://wallet-api.jeffgicharu.com/swagger-ui.html
 
 Demo accounts (state resets daily at 03:00 UTC):
 
@@ -79,7 +79,7 @@ Proxies `/api/*` to `http://localhost:8080` (wallet-api).
 The API base URL is read from `VITE_API_BASE_URL` at build time and falls back to `/api` so the Vite dev server's proxy keeps working without any setup. Override it for production builds:
 
 ```bash
-VITE_API_BASE_URL=https://api.wallet.jeffgicharu.com/api npm run build
+VITE_API_BASE_URL=https://wallet-api.jeffgicharu.com/api npm run build
 ```
 
 Anything you set is used as the axios `baseURL`, so include the `/api` segment that the wallet-api Spring controllers expect.

@@ -3,7 +3,7 @@ import axios from 'axios';
 // VITE_API_BASE_URL points at the wallet-api root. Defaults to '/api' so
 // the Vite dev server's proxy (vite.config.ts) handles local development
 // without any env setup. In a production build, set VITE_API_BASE_URL to
-// the public API origin, e.g. https://api.wallet.jeffgicharu.com
+// the public API origin, e.g. https://wallet-api.jeffgicharu.com
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 
 const api = axios.create({
