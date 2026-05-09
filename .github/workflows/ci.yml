@@ -3,11 +3,15 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    # Include test/** branches so cross-PR coordination (e.g. a Stryker PR
+    # opened against the not-yet-merged test/web-component-coverage branch)
+    # gets CI runs without waiting for the upstream PR to merge first.
+    branches: [main, 'test/**']
   schedule:
     # Nightly Stryker run at 03:00 UTC so the mutation score is tracked
     # even on weeks with no PR that touches the mutated paths.
     - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   build:
