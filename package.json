@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:cov": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "test:pact": "vitest run --config vitest.pact.config.ts",
+    "test:pact:ci": "vitest run --config vitest.pact.config.ts --reporter=default"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@pact-foundation/pact": "^16.4.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
