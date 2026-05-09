@@ -5,3 +5,7 @@ dist/
 
 # Test coverage output
 coverage/
+
+# Stryker output and sandbox
+reports/mutation/
+.stryker-tmp/

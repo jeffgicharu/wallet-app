@@ -13,7 +13,9 @@
     "test:cov": "vitest run --coverage",
     "test:ui": "vitest --ui",
     "test:pact": "vitest run --config vitest.pact.config.ts",
-    "test:pact:ci": "vitest run --config vitest.pact.config.ts --reporter=default"
+    "test:pact:ci": "vitest run --config vitest.pact.config.ts --reporter=default",
+    "test:mutation": "stryker run",
+    "test:mutation:ci": "stryker run --reporters clear-text,json,html"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -29,6 +31,9 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@pact-foundation/pact": "^16.4.0",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/typescript-checker": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

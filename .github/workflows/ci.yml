@@ -4,6 +4,11 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # Nightly Stryker run at 03:00 UTC so the mutation score is tracked
+    # even on weeks with no PR that touches the mutated paths.
+    - cron: '0 3 * * *'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,3 +46,79 @@ jobs:
           retention-days: 30
       - run: npm run build
       - run: docker build -t wallet-app:${{ github.sha }} .
+
+  stryker-mutation:
+    # Run on the nightly schedule, on push to main, and on PRs that touch
+    # files whose tests Stryker actually mutates. Skips PRs that only
+    # change docs / config, keeping wall-time off most reviewers' clocks.
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'push' ||
+      github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Detect changed paths (PRs only)
+        id: paths
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            mutation:
+              - 'src/components/**'
+              - 'src/pages/**'
+              - 'src/test/**'
+              - 'stryker.config.mjs'
+              - 'vite.config.ts'
+              - 'package.json'
+              - 'package-lock.json'
+
+      - name: Skip note when PR doesn't touch mutated files
+        if: github.event_name == 'pull_request' && steps.paths.outputs.mutation != 'true'
+        run: echo "PR does not touch mutation-relevant paths; skipping the 11-min Stryker run. Nightly schedule will catch any drift."
+
+      - run: npm ci
+        if: github.event_name != 'pull_request' || steps.paths.outputs.mutation == 'true'
+
+      - run: npm run test:mutation:ci
+        if: github.event_name != 'pull_request' || steps.paths.outputs.mutation == 'true'
+
+      - name: Summarise mutation result
+        if: |
+          always() && (github.event_name != 'pull_request' || steps.paths.outputs.mutation == 'true')
+        run: |
+          if [ -f reports/mutation/mutation.json ]; then
+            node -e "
+              const r = require('./reports/mutation/mutation.json');
+              let killed=0, survived=0, noCov=0, total=0;
+              for (const f of Object.values(r.files)) {
+                for (const m of f.mutants) {
+                  total++;
+                  if (m.status === 'Killed') killed++;
+                  else if (m.status === 'Survived') survived++;
+                  else if (m.status === 'NoCoverage') noCov++;
+                }
+              }
+              const score = total ? (100 * killed / total).toFixed(2) : '0.00';
+              const sum = require('node:fs').appendFileSync;
+              sum(process.env.GITHUB_STEP_SUMMARY, '### Stryker mutation analysis\n\n');
+              sum(process.env.GITHUB_STEP_SUMMARY, '| Killed | Survived | No coverage | Total | Score |\n');
+              sum(process.env.GITHUB_STEP_SUMMARY, '|---|---|---|---|---|\n');
+              sum(process.env.GITHUB_STEP_SUMMARY, '| ' + killed + ' | ' + survived + ' | ' + noCov + ' | ' + total + ' | **' + score + ' %** |\n');
+            "
+          fi
+
+      - name: Upload Stryker report
+        if: |
+          always() && (github.event_name != 'pull_request' || steps.paths.outputs.mutation == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-mutation-report
+          path: reports/mutation/
+          retention-days: 30
