@@ -1,5 +1,10 @@
 # Wallet App
 
+[![CI](https://github.com/jeffgicharu/wallet-app/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jeffgicharu/wallet-app/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/line%20coverage-90%25-brightgreen)](./MUTATION_TESTING.md)
+[![Mutation](https://img.shields.io/badge/Stryker%20mutation-58%25-yellow)](./MUTATION_TESTING.md)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 A mobile-first React frontend for the [wallet-api](https://github.com/jeffgicharu/wallet-api). This is the customer-facing app where users check their balance, send money, deposit, withdraw, and view transaction history. Built to look and feel like a real mobile money app.
 
 ## Live Demo
@@ -95,6 +100,29 @@ Anything you set is used as the axios `baseURL`, so include the `/api` segment t
 | Withdraw | `/withdraw` | Amount + PIN pad |
 | History | `/history` | Full transaction list |
 | Profile | `/profile` | Account info and sign out |
+
+## Quality engineering
+
+This repo is one half of a polyglot wallet system; the API is at [`jeffgicharu/wallet-api`](https://github.com/jeffgicharu/wallet-api). **The system-wide quality dashboard with current metrics and the full open backlog lives there:** [`wallet-api/QUALITY_DASHBOARD.md`](https://github.com/jeffgicharu/wallet-api/blob/main/QUALITY_DASHBOARD.md).
+
+**Frontend-specific quality docs at this repo root:**
+
+| Document | Covers |
+|---|---|
+| [AUDIT.md](./AUDIT.md) | Baseline state — what exists, what doesn't, what's measured |
+| [TEST_STRATEGY.md](./TEST_STRATEGY.md) | Frontend addendum pointing at the system-wide strategy |
+| [QA_BEST_PRACTICES.md](./QA_BEST_PRACTICES.md) | Frontend addendum (a11y checklist, perf budget, design-system reuse) |
+| [PACT.md](./PACT.md) | Consumer-side Pact contract setup and brittleness notes |
+| [MUTATION_TESTING.md](./MUTATION_TESTING.md) | Stryker setup, baseline, surviving-mutant register |
+| [AI_TESTING_NOTES.md](./AI_TESTING_NOTES.md) | Frontend addendum to the system-wide AI testing playbook |
+
+System-wide docs (in wallet-api) for the strategy, plan, conventions, performance budgets, security threat model, and AI playbook:
+
+- [System TEST_STRATEGY.md](https://github.com/jeffgicharu/wallet-api/blob/main/TEST_STRATEGY.md)
+- [System QA_BEST_PRACTICES.md](https://github.com/jeffgicharu/wallet-api/blob/main/QA_BEST_PRACTICES.md)
+- [AI_TESTING_PLAYBOOK.md](https://github.com/jeffgicharu/wallet-api/blob/main/AI_TESTING_PLAYBOOK.md)
+- [PERFORMANCE_TESTING.md](https://github.com/jeffgicharu/wallet-api/blob/main/PERFORMANCE_TESTING.md)
+- [SECURITY_TESTING.md](https://github.com/jeffgicharu/wallet-api/blob/main/SECURITY_TESTING.md)
 
 ## License
 
