@@ -23,5 +23,21 @@ jobs:
           name: vitest-coverage-report
           path: coverage/
           retention-days: 14
+      - name: Generate consumer pact
+        run: npm run test:pact:ci
+      - name: Detect uncommitted pact drift
+        run: |
+          if ! git diff --exit-code pacts/; then
+            echo "::error::Consumer pact tests regenerated pacts/ to a different shape than what is committed."
+            echo "::error::Run 'npm run test:pact' locally and commit the updated pact file."
+            exit 1
+          fi
+      - name: Upload pact artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-pacts
+          path: pacts/
+          retention-days: 30
       - run: npm run build
       - run: docker build -t wallet-app:${{ github.sha }} .
