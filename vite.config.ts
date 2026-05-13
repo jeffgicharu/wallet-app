@@ -19,6 +19,7 @@ export default defineConfig({
     globals: true,
     css: false,
     include: ['src/**/*.test.{ts,tsx}'],
+    exclude: ['node_modules/**', 'dist/**', 'src/test/pact/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
