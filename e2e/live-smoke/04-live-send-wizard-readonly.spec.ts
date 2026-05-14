@@ -60,13 +60,10 @@ test.describe('04 — live send wizard (read-only)', () => {
     // actually transfer money on the live deploy.
   });
 
-  // wallet-app#6 — confirm step omits the "Fee" line. Marked as a
-  // characterization; when #6 ships, this should report unexpected
-  // pass and the annotation can be removed.
-  test.fail('send confirm step omits transfer fee — issue jeffgicharu/wallet-app#6', async ({ page }) => {
+  test('send confirm shows transfer fee — issue jeffgicharu/wallet-app#6', async ({ page }) => {
     await loginAsAlice(page);
 
-    await page.getByRole('button', { name: 'Send' }).click();
+    await page.getByRole('button', { name: 'Send', exact: true }).click();
     await page.waitForURL('**/send');
     await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
     await page.getByRole('button', { name: 'Next' }).click();
@@ -74,9 +71,11 @@ test.describe('04 — live send wizard (read-only)', () => {
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByRole('heading', { name: 'Confirm Transfer' })).toBeVisible();
 
-    // Fixed behavior: a "Fee" line is rendered on the confirm step.
-    await expect(page.getByText(/Fee/)).toBeVisible({ timeout: 2_000 });
+    // 1 % of 10 = 0.10. Total = 10.10.
+    await expect(page.getByText(/Fee/)).toBeVisible();
+    await expect(page.getByText('KES 0.10')).toBeVisible();
+    await expect(page.getByText('KES 10.10')).toBeVisible();
 
-    // Still do NOT submit — characterization ends before the PIN pad.
+    // Still do NOT submit — read-only verification ends before the PIN pad.
   });
 });

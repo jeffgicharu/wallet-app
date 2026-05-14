@@ -48,29 +48,27 @@ test.describe('11 — known bug characterization', () => {
   });
 
   // ------------------------------------------------------------------
-  // wallet-app #6 — Send confirm step does not display the fee.
-  // Fixed behavior: a "Fee" line is visible on the confirm screen.
+  // wallet-app #6 — Send confirm now shows Amount / Fee / Total.
   // ------------------------------------------------------------------
-  test.fail(
-    'send confirm step omits transfer fee — issue jeffgicharu/wallet-app#6',
-    async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/');
+  test('send confirm shows transfer fee and total — issue jeffgicharu/wallet-app#6', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
 
-      await page.goto('/send');
-      await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
-      await page.getByRole('button', { name: 'Next' }).click();
-      await page.locator('input[placeholder="0.00"]').fill('1000');
-      await page.getByRole('button', { name: 'Next' }).click();
-      await expect(page.getByRole('heading', { name: 'Confirm Transfer' })).toBeVisible();
+    await page.goto('/send');
+    await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.locator('input[placeholder="0.00"]').fill('1000');
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('heading', { name: 'Confirm Transfer' })).toBeVisible();
 
-      // The fix would show a "Fee" row.
-      await expect(page.getByText(/Fee/)).toBeVisible({ timeout: 2_000 });
-    }
-  );
+    // 1% of 1000 = 10. Total = 1010.
+    await expect(page.getByText(/Fee/)).toBeVisible();
+    await expect(page.getByText('KES 10.00')).toBeVisible();
+    await expect(page.getByText('KES 1,010.00')).toBeVisible();
+  });
 
   // ------------------------------------------------------------------
   // wallet-app #7 — Send amount step omits the daily-limit hint.

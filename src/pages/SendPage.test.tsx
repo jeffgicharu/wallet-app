@@ -122,15 +122,7 @@ describe('SendPage', () => {
     expect(screen.getByText('Recipient Phone Number')).toBeInTheDocument();
   });
 
-  /**
-   * Characterisation: the Confirm step today displays only "Amount" and
-   * "Total" — and Total equals Amount because the frontend does not
-   * surface the 1 % transfer fee anywhere. The wallet-api charges the fee
-   * server-side; the user sees the post-fee balance change but never the
-   * fee itself before confirming. README-implied transparency does not
-   * match the current UI.
-   */
-  it('characterisation_confirmStepDoesNotShowTheTransferFee', async () => {
+  it('shows the 1% transfer fee and post-fee total on the Confirm step (fix for #6)', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SendPage />, { initialEntries: ['/send'], authenticated: auth });
 
@@ -139,7 +131,9 @@ describe('SendPage', () => {
     await user.type(screen.getByPlaceholderText('0.00'), '1000');
     await user.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(screen.queryByText(/fee/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Fee \(1%\)/i)).toBeInTheDocument();
+    expect(screen.getByText('KES 10.00')).toBeInTheDocument();    // fee
+    expect(screen.getByText('KES 1,010.00')).toBeInTheDocument(); // total
   });
 
   it('has no accessibility violations on the phone step', async () => {
