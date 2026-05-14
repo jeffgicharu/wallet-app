@@ -10,29 +10,42 @@ import { test, expect } from '@playwright/test';
 //     annotation can be removed.
 test.describe('11 — known bug characterization', () => {
   // ------------------------------------------------------------------
-  // wallet-app #5 — LoginPage has no client-side validation.
-  // The fixed behavior is: clicking Sign In with empty inputs surfaces
-  // a validation message and does NOT call POST /api/auth/login.
+  // wallet-app #5 — LoginPage now does client-side validation.
+  // Submitting an empty form surfaces "Email is required" /
+  // "Password is required" inline and does NOT call /api/auth/login.
   // ------------------------------------------------------------------
-  test.fail(
-    'login submits empty form to API — issue jeffgicharu/wallet-app#5',
-    async ({ page }) => {
-      let loginCalled = false;
-      await page.route('**/api/auth/login', async (route) => {
-        loginCalled = true;
-        await route.continue();
-      });
+  test('login form rejects empty submit before API — issue jeffgicharu/wallet-app#5', async ({ page }) => {
+    let loginCalled = false;
+    await page.route('**/api/auth/login', async (route) => {
+      loginCalled = true;
+      await route.continue();
+    });
 
-      await page.goto('/login');
-      await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.goto('/login');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForTimeout(500);
 
-      // Give the request a beat to fire.
-      await page.waitForTimeout(1000);
+    await expect(page.getByText('Email is required')).toBeVisible();
+    await expect(page.getByText('Password is required')).toBeVisible();
+    expect(loginCalled, 'login API should NOT be called for empty form').toBe(false);
+  });
 
-      // The fix would prevent the network call AND show a message.
-      expect(loginCalled, 'login API should NOT be called for empty form').toBe(false);
-    }
-  );
+  test('login form rejects malformed email before API — issue jeffgicharu/wallet-app#5', async ({ page }) => {
+    let loginCalled = false;
+    await page.route('**/api/auth/login', async (route) => {
+      loginCalled = true;
+      await route.continue();
+    });
+
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('not-an-email');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForTimeout(500);
+
+    await expect(page.getByText('Enter a valid email address')).toBeVisible();
+    expect(loginCalled, 'login API should NOT be called for invalid email').toBe(false);
+  });
 
   // ------------------------------------------------------------------
   // wallet-app #6 — Send confirm step does not display the fee.

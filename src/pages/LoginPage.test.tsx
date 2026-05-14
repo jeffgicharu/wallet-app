@@ -79,26 +79,52 @@ describe('LoginPage', () => {
     ).toBeDisabled();
   });
 
-  /**
-   * Characterisation: the login form has no client-side validation. Empty
-   * submission goes straight to the API which 401s. The README-implied
-   * guidance "field validation on the client" does not apply today; this
-   * test pins the actual behaviour.
-   */
-  it('characterisation_emptySubmissionDispatchesApiCallAndDisplaysApiError', async () => {
+  it('rejects empty submission client-side and does not call the API (fix for #5)', async () => {
+    let loginCalls = 0;
+    server.use(
+      http.post('*/api/auth/login', () => {
+        loginCalls += 1;
+        return HttpResponse.json({ success: false }, { status: 401 });
+      }),
+    );
     const user = userEvent.setup();
     renderWithProviders(<LoginPage />, {
       initialEntries: ['/login'],
       extraRoutes: [{ path: '/', element: <div data-testid="home">Home</div> }],
     });
 
-    // Note: no .type() calls — both fields are empty.
+    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Email is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/Password is required/i)).toBeInTheDocument();
+    });
+    expect(loginCalls).toBe(0);
+    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+  });
+
+  it('rejects malformed email client-side and does not call the API (fix for #5)', async () => {
+    let loginCalls = 0;
+    server.use(
+      http.post('*/api/auth/login', () => {
+        loginCalls += 1;
+        return HttpResponse.json({ success: false }, { status: 401 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />, {
+      initialEntries: ['/login'],
+      extraRoutes: [{ path: '/', element: <div data-testid="home">Home</div> }],
+    });
+
+    await user.type(screen.getByPlaceholderText('Email'), 'not-an-email');
+    await user.type(screen.getByPlaceholderText('Password'), 'pass1234');
     await user.click(screen.getByRole('button', { name: 'Sign In' }));
 
     await waitFor(() =>
-      expect(screen.getByText(/Invalid email or password/i)).toBeInTheDocument(),
+      expect(screen.getByText(/Enter a valid email address/i)).toBeInTheDocument(),
     );
-    expect(screen.queryByTestId('home')).not.toBeInTheDocument();
+    expect(loginCalls).toBe(0);
   });
 
   /**
