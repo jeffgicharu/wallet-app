@@ -72,24 +72,25 @@ test.describe('11 — known bug characterization', () => {
 
   // ------------------------------------------------------------------
   // wallet-app #7 — Send amount step omits the daily-limit hint.
-  // Fixed behavior: "Daily limit" hint visible on amount step.
+  // Send amount step now shows the "Remaining today" hint sourced from
+  // /api/wallet's dailyTransferLimit / dailyTransferUsed.
   // ------------------------------------------------------------------
-  test.fail(
-    'send amount step omits daily limit — issue jeffgicharu/wallet-app#7',
-    async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/');
+  test('send amount step shows remaining daily limit — issue jeffgicharu/wallet-app#7', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
 
-      await page.goto('/send');
-      await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
-      await page.getByRole('button', { name: 'Next' }).click();
-      // Amount step is now visible. Daily-limit hint is missing.
-      await expect(page.getByText(/Daily limit/i)).toBeVisible({ timeout: 2_000 });
-    }
-  );
+    await page.goto('/send');
+    await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    await expect(page.getByText(/Remaining today/i)).toBeVisible();
+    // Verify the limit line references the daily limit configured in
+    // wallet-api (KES 300,000 unless changed).
+    await expect(page.getByText(/limit KES/i)).toBeVisible();
+  });
 
   // ------------------------------------------------------------------
   // wallet-app #8 — Tapping a transaction row goes to /history/{ref}
