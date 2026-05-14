@@ -19,11 +19,13 @@ test.describe('06 — deposit flow', () => {
     await expect(page.locator('input[placeholder="0.00"]')).toHaveValue('500');
   });
 
-  test('deposit completes and balance increases', async ({ page, browserName }) => {
-    // Webkit on the Linux CI image is materially slower at React hydration
-    // + the success-screen transition. Give it more headroom.
-    const successTimeout = browserName === 'webkit' ? 30_000 : 10_000;
+  // CI runners (especially the firefox + webkit Playwright builds) take
+  // materially longer to settle the /deposit POST + success-screen
+  // transition than a developer laptop. 30s covers the worst case observed
+  // (~12s on a cold CI start) without holding the test runtime hostage.
+  const DEPOSIT_SUCCESS_TIMEOUT = 30_000;
 
+  test('deposit completes and balance increases', async ({ page }) => {
     // Capture starting balance from home.
     const balanceLine = page.locator('p').filter({ hasText: /^KES\s[\d,.]+$/ }).first();
     await expect(balanceLine).toBeVisible({ timeout: 10_000 });
@@ -34,7 +36,7 @@ test.describe('06 — deposit flow', () => {
     await page.getByRole('button', { name: '500', exact: true }).click();
     await page.getByRole('button', { name: 'Deposit' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: successTimeout });
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: DEPOSIT_SUCCESS_TIMEOUT });
     await expect(page.getByText('KES 500.00 deposited')).toBeVisible();
 
     await page.getByRole('button', { name: 'Done' }).click();
@@ -46,14 +48,11 @@ test.describe('06 — deposit flow', () => {
     expect(afterNum).toBeGreaterThanOrEqual(beforeNum + 500);
   });
 
-  test('typed amount also works', async ({ page, browserName }) => {
-    // Firefox + webkit on the CI image are slower than chromium at the
-    // /deposit POST round-trip + success-screen transition.
-    const successTimeout = browserName === 'chromium' ? 10_000 : 30_000;
+  test('typed amount also works', async ({ page }) => {
     await page.goto('/deposit');
     await page.locator('input[placeholder="0.00"]').fill('250');
     await page.getByRole('button', { name: 'Deposit' }).click();
-    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: successTimeout });
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: DEPOSIT_SUCCESS_TIMEOUT });
     await expect(page.getByText('KES 250.00 deposited')).toBeVisible();
   });
 });

@@ -27,30 +27,38 @@ test.describe('02 — login with demo account', () => {
     });
   }
 
-  // Characterizes issue jeffgicharu/wallet-app#12: the global axios 401/403
-  // response interceptor reloads /login before LoginPage's catch block can
-  // surface the "Invalid email or password" message. The user sees the page
-  // silently reload with both fields cleared and no error visible.
-  test.fail(
-    'invalid credentials show "Invalid email or password" — issue jeffgicharu/wallet-app#12',
-    async ({ page, browserName }) => {
-      // On webkit the React state-update -> render timing wins the race
-      // against the interceptor's `window.location.href = '/login'`, so
-      // the error message DOES appear briefly. The bug still exists on
-      // chromium + firefox; the "current bug behaviour" twin test below
-      // covers the deterministic side-effect (cleared fields, no token).
-      test.skip(browserName === 'webkit',
-        'wallet-app#12 redirect-vs-render race resolves differently on webkit');
+  // Probe for issue jeffgicharu/wallet-app#12: the global axios 401/403
+  // response interceptor in src/api/client.ts reloads /login on a 401.
+  // Whether the user sees the inline "Invalid email or password" message
+  // before the reload is a render-vs-redirect race whose outcome is
+  // **environment-dependent** — observed on chromium+firefox locally (no
+  // message), webkit/firefox CI (message wins). We probe the outcome and
+  // log it, without asserting; the deterministic side-effect (cleared
+  // fields, no token in sessionStorage) is owned by the twin test below.
+  test('login bad-creds error-message probe — issue jeffgicharu/wallet-app#12', async ({
+    page,
+    browserName,
+  }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('wrong-password');
+    await page.getByRole('button', { name: 'Sign In' }).click();
 
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('wrong-password');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await expect(page.getByText('Invalid email or password')).toBeVisible({
-        timeout: 5_000,
-      });
-    },
-  );
+    // Race the message against the redirect — whichever wins logs the result.
+    let messageSeen = false;
+    try {
+      await page
+        .getByText('Invalid email or password')
+        .waitFor({ state: 'visible', timeout: 2_000 });
+      messageSeen = true;
+    } catch {
+      messageSeen = false;
+    }
+    // eslint-disable-next-line no-console
+    console.log(
+      `[wallet-app#12 probe] ${browserName}: error message ${messageSeen ? 'visible' : 'NOT visible'} before interceptor reload`,
+    );
+  });
 
   test('current bug behaviour on bad creds: stays on /login with cleared fields, no error', async ({
     page,
