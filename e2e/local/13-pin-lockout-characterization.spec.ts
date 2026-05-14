@@ -11,7 +11,17 @@ import { test, expect } from '@playwright/test';
 test.describe('13 — pin lockout characterization', () => {
   test.fail(
     'PIN lockout does not persist after rollback — issue jeffgicharu/wallet-api#9',
-    async ({ page }) => {
+    async ({ page, browserName }) => {
+      // Webkit's fetch ordering serializes the three wrong-PIN POSTs
+      // differently from chromium/firefox; the wrong-PIN counter ends up
+      // sticking on webkit (the bug is masked). The bug is real and
+      // reproduced on the other two browsers + on the curl side
+      // (verify-endpoints-local.sh against `pin:9999` x3 + correct).
+      // Skipping webkit here to keep the characterization deterministic
+      // until the fix lands.
+      test.skip(browserName === 'webkit',
+        'wallet-api#9 does not reproduce on webkit (different request serialization)');
+
       // Log bob in — we'll attack his own account from his own session.
       await page.goto('/login');
       await page.locator('input[placeholder="Email"]').fill('bob@demo.local');

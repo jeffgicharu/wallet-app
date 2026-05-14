@@ -19,7 +19,11 @@ test.describe('06 — deposit flow', () => {
     await expect(page.locator('input[placeholder="0.00"]')).toHaveValue('500');
   });
 
-  test('deposit completes and balance increases', async ({ page }) => {
+  test('deposit completes and balance increases', async ({ page, browserName }) => {
+    // Webkit on the Linux CI image is materially slower at React hydration
+    // + the success-screen transition. Give it more headroom.
+    const successTimeout = browserName === 'webkit' ? 30_000 : 10_000;
+
     // Capture starting balance from home.
     const balanceLine = page.locator('p').filter({ hasText: /^KES\s[\d,.]+$/ }).first();
     await expect(balanceLine).toBeVisible({ timeout: 10_000 });
@@ -30,7 +34,7 @@ test.describe('06 — deposit flow', () => {
     await page.getByRole('button', { name: '500', exact: true }).click();
     await page.getByRole('button', { name: 'Deposit' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: successTimeout });
     await expect(page.getByText('KES 500.00 deposited')).toBeVisible();
 
     await page.getByRole('button', { name: 'Done' }).click();
