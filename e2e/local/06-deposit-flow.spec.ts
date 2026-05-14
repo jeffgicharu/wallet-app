@@ -1,0 +1,58 @@
+import { test, expect } from '@playwright/test';
+
+// DepositPage: type or use a preset amount, click Deposit, see success
+// confirmation. No PIN required (deposit is unauthenticated by design
+// for the demo wallet — it represents a cash-in event at a "branch").
+test.describe('06 — deposit flow', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
+  });
+
+  test('500 preset fills amount field', async ({ page }) => {
+    await page.goto('/deposit');
+    await expect(page.getByRole('heading', { name: 'Deposit Money' })).toBeVisible();
+    await page.getByRole('button', { name: '500', exact: true }).click();
+    await expect(page.locator('input[placeholder="0.00"]')).toHaveValue('500');
+  });
+
+  // CI runners (especially the firefox + webkit Playwright builds) take
+  // materially longer to settle the /deposit POST + success-screen
+  // transition than a developer laptop. 30s covers the worst case observed
+  // (~12s on a cold CI start) without holding the test runtime hostage.
+  const DEPOSIT_SUCCESS_TIMEOUT = 30_000;
+
+  test('deposit completes and balance increases', async ({ page }) => {
+    // Capture starting balance from home.
+    const balanceLine = page.locator('p').filter({ hasText: /^KES\s[\d,.]+$/ }).first();
+    await expect(balanceLine).toBeVisible({ timeout: 10_000 });
+    const before = await balanceLine.textContent();
+    const beforeNum = parseFloat((before || '').replace(/[^0-9.]/g, ''));
+
+    await page.goto('/deposit');
+    await page.getByRole('button', { name: '500', exact: true }).click();
+    await page.getByRole('button', { name: 'Deposit' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: DEPOSIT_SUCCESS_TIMEOUT });
+    await expect(page.getByText('KES 500.00 deposited')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Done' }).click();
+    await page.waitForURL('**/');
+
+    await expect(balanceLine).toBeVisible();
+    const after = await balanceLine.textContent();
+    const afterNum = parseFloat((after || '').replace(/[^0-9.]/g, ''));
+    expect(afterNum).toBeGreaterThanOrEqual(beforeNum + 500);
+  });
+
+  test('typed amount also works', async ({ page }) => {
+    await page.goto('/deposit');
+    await page.locator('input[placeholder="0.00"]').fill('250');
+    await page.getByRole('button', { name: 'Deposit' }).click();
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: DEPOSIT_SUCCESS_TIMEOUT });
+    await expect(page.getByText('KES 250.00 deposited')).toBeVisible();
+  });
+});

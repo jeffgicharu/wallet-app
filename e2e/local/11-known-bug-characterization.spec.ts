@@ -1,0 +1,160 @@
+import { test, expect } from '@playwright/test';
+
+// Characterization tests for known bugs filed in the wallet-app /
+// wallet-api repos. Each uses test.fail() with a comment referencing
+// the GitHub issue. The contract:
+//
+//   - assertion describes the FIXED behavior
+//   - test currently fails because the fix has not landed
+//   - when the fix ships, Playwright reports "unexpected pass" and the
+//     annotation can be removed.
+test.describe('11 — known bug characterization', () => {
+  // ------------------------------------------------------------------
+  // wallet-app #5 — LoginPage has no client-side validation.
+  // The fixed behavior is: clicking Sign In with empty inputs surfaces
+  // a validation message and does NOT call POST /api/auth/login.
+  // ------------------------------------------------------------------
+  test.fail(
+    'login submits empty form to API — issue jeffgicharu/wallet-app#5',
+    async ({ page }) => {
+      let loginCalled = false;
+      await page.route('**/api/auth/login', async (route) => {
+        loginCalled = true;
+        await route.continue();
+      });
+
+      await page.goto('/login');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+
+      // Give the request a beat to fire.
+      await page.waitForTimeout(1000);
+
+      // The fix would prevent the network call AND show a message.
+      expect(loginCalled, 'login API should NOT be called for empty form').toBe(false);
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // wallet-app #6 — Send confirm step does not display the fee.
+  // Fixed behavior: a "Fee" line is visible on the confirm screen.
+  // ------------------------------------------------------------------
+  test.fail(
+    'send confirm step omits transfer fee — issue jeffgicharu/wallet-app#6',
+    async ({ page }) => {
+      await page.goto('/login');
+      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+      await page.locator('input[placeholder="Password"]').fill('pass1234');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('**/');
+
+      await page.goto('/send');
+      await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
+      await page.getByRole('button', { name: 'Next' }).click();
+      await page.locator('input[placeholder="0.00"]').fill('1000');
+      await page.getByRole('button', { name: 'Next' }).click();
+      await expect(page.getByRole('heading', { name: 'Confirm Transfer' })).toBeVisible();
+
+      // The fix would show a "Fee" row.
+      await expect(page.getByText(/Fee/)).toBeVisible({ timeout: 2_000 });
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // wallet-app #7 — Send amount step omits the daily-limit hint.
+  // Fixed behavior: "Daily limit" hint visible on amount step.
+  // ------------------------------------------------------------------
+  test.fail(
+    'send amount step omits daily limit — issue jeffgicharu/wallet-app#7',
+    async ({ page }) => {
+      await page.goto('/login');
+      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+      await page.locator('input[placeholder="Password"]').fill('pass1234');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('**/');
+
+      await page.goto('/send');
+      await page.locator('input[placeholder="0712 345 678"]').fill('0700000002');
+      await page.getByRole('button', { name: 'Next' }).click();
+      // Amount step is now visible. Daily-limit hint is missing.
+      await expect(page.getByText(/Daily limit/i)).toBeVisible({ timeout: 2_000 });
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // wallet-app #8 — Tapping a transaction row goes to /history/{ref}
+  // which is not a registered route. Fixed behavior: detail view loads
+  // and shows the reference. Current behavior: blank / 404 / fallback.
+  // ------------------------------------------------------------------
+  test.fail(
+    'transaction row navigates to unregistered /history/{ref} — issue jeffgicharu/wallet-app#8',
+    async ({ page }) => {
+      await page.goto('/login');
+      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+      await page.locator('input[placeholder="Password"]').fill('pass1234');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('**/');
+
+      await page.goto('/history');
+      await expect(page.getByRole('heading', { name: 'Transaction History' })).toBeVisible();
+      const firstRow = page.locator('div.bg-white > button').first();
+      await firstRow.click();
+
+      // URL should change to /history/<reference>.
+      await page.waitForURL(/\/history\/.+/);
+      // Fixed behavior: a detail heading is visible.
+      await expect(page.getByRole('heading', { name: /Transaction Detail|Details/i })).toBeVisible({ timeout: 2_000 });
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // wallet-api #2 — AdminController accessible to regular users.
+  // Fixed behavior: 403 Forbidden for non-admin tokens.
+  // ------------------------------------------------------------------
+  test.fail(
+    'admin stats accessible to regular user — issue jeffgicharu/wallet-api#2',
+    async ({ page }) => {
+      await page.goto('/login');
+      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+      await page.locator('input[placeholder="Password"]').fill('pass1234');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('**/');
+
+      const status = await page.evaluate(async () => {
+        const token = sessionStorage.getItem('token');
+        const res = await fetch('/api/admin/stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return res.status;
+      });
+
+      // Fixed behavior: regular user gets 403.
+      expect(status).toBe(403);
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // wallet-api #20 — Cross-user transaction lookup.
+  // Alice fetches DEP-seed-bob. Fixed behavior: 403 or 404.
+  // ------------------------------------------------------------------
+  test.fail(
+    'cross-user transaction lookup returns 200 — issue jeffgicharu/wallet-api#20',
+    async ({ page }) => {
+      await page.goto('/login');
+      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+      await page.locator('input[placeholder="Password"]').fill('pass1234');
+      await page.getByRole('button', { name: 'Sign In' }).click();
+      await page.waitForURL('**/');
+
+      const status = await page.evaluate(async () => {
+        const token = sessionStorage.getItem('token');
+        const res = await fetch('/api/wallet/transactions/DEP-seed-bob', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        return res.status;
+      });
+
+      // Fixed behavior: not 200.
+      expect(status).not.toBe(200);
+    }
+  );
+});

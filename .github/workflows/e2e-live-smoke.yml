@@ -1,0 +1,55 @@
+name: E2E live smoke
+
+# Hits the public deploy at https://wallet.jeffgicharu.com (SPA) and
+# https://wallet-api.jeffgicharu.com (API). Gentle on the demo: 1 worker, 2
+# retries, no money-moving submits. Characterizations for known live bugs are
+# annotated test.fail().
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # 06:00 UTC daily — picks up regressions in the deploy or the demo
+    # data seed (which runs at 03:00 UTC).
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  e2e-live-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run Playwright live-smoke suite
+        run: npm run test:e2e:live
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-live-smoke
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright test-results (traces, videos)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-live-smoke
+          path: test-results/
+          retention-days: 14
