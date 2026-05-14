@@ -8,6 +8,13 @@ import toast from 'react-hot-toast';
 
 type Step = 'phone' | 'amount' | 'confirm' | 'pin' | 'success';
 
+// wallet-api charges a 1% transfer fee (wallet.transfer-fee-percent in
+// application.yml). Mirror the rate here so the confirm step can preview
+// the fee before the user signs the PIN. If the backend rate changes,
+// this is the one place to update on the client.
+const TRANSFER_FEE_RATE = 0.01;
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export function SendPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -74,20 +81,26 @@ export function SendPage() {
         </div>
       )}
 
-      {step === 'confirm' && (
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-center mb-6">Confirm Transfer</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between"><span className="text-gray-500">To</span><span className="font-medium">{phone}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">KES {fmt(parseFloat(amount))}</span></div>
-            <hr />
-            <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">KES {fmt(parseFloat(amount))}</span></div>
+      {step === 'confirm' && (() => {
+        const amountNum = parseFloat(amount);
+        const fee = round2(amountNum * TRANSFER_FEE_RATE);
+        const total = round2(amountNum + fee);
+        return (
+          <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-center mb-6">Confirm Transfer</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between"><span className="text-gray-500">To</span><span className="font-medium">{phone}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">KES {fmt(amountNum)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Fee (1%)</span><span className="font-medium">KES {fmt(fee)}</span></div>
+              <hr />
+              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">KES {fmt(total)}</span></div>
+            </div>
+            <button onClick={() => setStep('pin')} className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium">
+              Enter PIN to Confirm
+            </button>
           </div>
-          <button onClick={() => setStep('pin')} className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium">
-            Enter PIN to Confirm
-          </button>
-        </div>
-      )}
+        );
+      })()}
 
       {step === 'pin' && (
         <PinPad title="Enter M-Wallet PIN" onComplete={pin => mutation.mutate(pin)}
