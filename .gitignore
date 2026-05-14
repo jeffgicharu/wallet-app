@@ -9,3 +9,8 @@ coverage/
 # Stryker output and sandbox
 reports/mutation/
 .stryker-tmp/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+.playwright/

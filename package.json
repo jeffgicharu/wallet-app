@@ -15,7 +15,11 @@
     "test:pact": "vitest run --config vitest.pact.config.ts",
     "test:pact:ci": "vitest run --config vitest.pact.config.ts --reporter=default",
     "test:mutation": "stryker run",
-    "test:mutation:ci": "stryker run --reporters clear-text,json,html"
+    "test:mutation:ci": "stryker run --reporters clear-text,json,html",
+    "test:e2e": "playwright test",
+    "test:e2e:local": "playwright test --project=local-chromium --project=local-firefox --project=local-webkit",
+    "test:e2e:live": "playwright test --workers=1 --project=live-smoke-chromium --project=live-smoke-firefox --project=live-smoke-webkit",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.2",
@@ -31,6 +35,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@pact-foundation/pact": "^16.4.0",
+    "@playwright/test": "^1.60.0",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/typescript-checker": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
