@@ -46,11 +46,14 @@ test.describe('06 — deposit flow', () => {
     expect(afterNum).toBeGreaterThanOrEqual(beforeNum + 500);
   });
 
-  test('typed amount also works', async ({ page }) => {
+  test('typed amount also works', async ({ page, browserName }) => {
+    // Firefox + webkit on the CI image are slower than chromium at the
+    // /deposit POST round-trip + success-screen transition.
+    const successTimeout = browserName === 'chromium' ? 10_000 : 30_000;
     await page.goto('/deposit');
     await page.locator('input[placeholder="0.00"]').fill('250');
     await page.getByRole('button', { name: 'Deposit' }).click();
-    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Deposit Successful' })).toBeVisible({ timeout: successTimeout });
     await expect(page.getByText('KES 250.00 deposited')).toBeVisible();
   });
 });

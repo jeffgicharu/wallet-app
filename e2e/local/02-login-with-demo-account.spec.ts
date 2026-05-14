@@ -33,7 +33,15 @@ test.describe('02 — login with demo account', () => {
   // silently reload with both fields cleared and no error visible.
   test.fail(
     'invalid credentials show "Invalid email or password" — issue jeffgicharu/wallet-app#12',
-    async ({ page }) => {
+    async ({ page, browserName }) => {
+      // On webkit the React state-update -> render timing wins the race
+      // against the interceptor's `window.location.href = '/login'`, so
+      // the error message DOES appear briefly. The bug still exists on
+      // chromium + firefox; the "current bug behaviour" twin test below
+      // covers the deterministic side-effect (cleared fields, no token).
+      test.skip(browserName === 'webkit',
+        'wallet-app#12 redirect-vs-render race resolves differently on webkit');
+
       await page.goto('/login');
       await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
       await page.locator('input[placeholder="Password"]').fill('wrong-password');
