@@ -422,14 +422,12 @@ describe('withdraw and transfer contracts', () => {
     });
   });
 
-  it('POST /api/wallet/transfer — duplicate idempotency key returns 409 (issue #10)', async () => {
+  it('POST /api/wallet/transfer — duplicate idempotency key replays the original 200 (issue #10 fixed)', async () => {
     /*
-     * Issue jeffgicharu/wallet-api#10 captures that the README promises an
-     * idempotent retry to RETURN the original transaction, while the current
-     * provider rejects the retry with 409 DuplicateTransactionException. The
-     * contract pins the present 409 behaviour. When #10 is fixed, this
-     * interaction is updated to expect 200 with the original transaction
-     * body, and provider verification re-runs against the new pact.
+     * Issue jeffgicharu/wallet-api#10 fixed: a retry with an
+     * already-used idempotency key now returns the ORIGINAL
+     * transaction's 200 response (same reference) instead of a 409, so
+     * a client that never saw the first response can safely retry.
      */
     provider
       .given('alice has previously transferred with idempotency key idem-pact-dup')
@@ -445,30 +443,33 @@ describe('withdraw and transfer contracts', () => {
         },
       })
       .willRespondWith({
-        status: 409,
+        status: 200,
         headers: jsonHeaders,
         body: {
-          success: false,
-          message: like('Transaction with this idempotency key has already been processed'),
+          success: true,
+          message: like('Transfer successful'),
+          data: {
+            reference: like('TRF-idem-pact-dup'),
+            type: 'TRANSFER',
+            status: 'COMPLETED',
+            amount: 5000,
+            createdAt: like('2026-05-08T09:00:00Z'),
+          },
           timestamp: like('2026-05-08T09:00:00Z'),
         },
       });
 
     await provider.executeTest(async (mockServer) => {
-      try {
-        await axios.post(
-          `${mockServer.url}/api/wallet/transfer`,
-          {
-            recipientPhone: '+254700000002', amount: 5000, pin: '1234',
-            idempotencyKey: 'idem-pact-dup',
-          },
-          { headers: bearerHeaders('test.jwt.token') },
-        );
-        throw new Error('expected 409');
-      } catch (err: unknown) {
-        const e = err as { response: { status: number } };
-        expect(e.response.status).toBe(409);
-      }
+      const res = await axios.post(
+        `${mockServer.url}/api/wallet/transfer`,
+        {
+          recipientPhone: '+254700000002', amount: 5000, pin: '1234',
+          idempotencyKey: 'idem-pact-dup',
+        },
+        { headers: bearerHeaders('test.jwt.token') },
+      );
+      expect(res.status).toBe(200);
+      expect(res.data.data.reference).toContain('idem-pact-dup');
     });
   });
 
