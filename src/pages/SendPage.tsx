@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { walletApi } from '../api/wallet';
 import { PinPad } from '../components/PinPad';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -22,6 +22,15 @@ export function SendPage() {
   const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
+
+  // Daily transfer limit is enforced server-side (wallet.daily-transfer-limit
+   // in wallet-api). Read the current usage so we can show a "Remaining today"
+   // hint and disable Continue if the entered amount + fee would exceed it.
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet'],
+    queryFn: () => walletApi.getWallet().then(r => r.data.data),
+    staleTime: 15_000,
+  });
 
   const mutation = useMutation({
     mutationFn: (pin: string) => walletApi.transfer(
@@ -67,19 +76,44 @@ export function SendPage() {
         </div>
       )}
 
-      {step === 'amount' && (
-        <div>
-          <p className="text-sm text-gray-500 mb-4">To: {phone}</p>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Amount (KES)</label>
-          <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
-            placeholder="0.00" autoFocus
-            className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-2xl text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
-          <button onClick={() => parseFloat(amount) >= 10 && setStep('confirm')} disabled={!amount || parseFloat(amount) < 10}
-            className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40">
-            Next
-          </button>
-        </div>
-      )}
+      {step === 'amount' && (() => {
+        const amountNum = parseFloat(amount);
+        const projectedFee = isNaN(amountNum) ? 0 : round2(amountNum * TRANSFER_FEE_RATE);
+        const projectedDebit = isNaN(amountNum) ? 0 : round2(amountNum + projectedFee);
+        const remaining = wallet
+          ? round2(wallet.dailyTransferLimit - wallet.dailyTransferUsed)
+          : undefined;
+        const overLimit =
+          remaining !== undefined && !isNaN(amountNum) && projectedDebit > remaining;
+        const underMin = !amount || amountNum < 10;
+        const disabled = underMin || overLimit;
+        return (
+          <div>
+            <p className="text-sm text-gray-500 mb-4">To: {phone}</p>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Amount (KES)</label>
+            <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
+              placeholder="0.00" autoFocus
+              className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-2xl text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
+            {remaining !== undefined && (
+              <p className="mt-2 text-xs text-gray-500">
+                Remaining today: KES {fmt(remaining)}{' '}
+                <span className="text-gray-400">
+                  (limit KES {fmt(wallet!.dailyTransferLimit)}, used KES {fmt(wallet!.dailyTransferUsed)})
+                </span>
+              </p>
+            )}
+            {overLimit && (
+              <p className="mt-2 flex items-center gap-1 text-xs text-red-600">
+                <AlertCircle size={14} /> Amount + 1% fee would exceed today's transfer limit.
+              </p>
+            )}
+            <button onClick={() => !disabled && setStep('confirm')} disabled={disabled}
+              className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40">
+              Next
+            </button>
+          </div>
+        );
+      })()}
 
       {step === 'confirm' && (() => {
         const amountNum = parseFloat(amount);

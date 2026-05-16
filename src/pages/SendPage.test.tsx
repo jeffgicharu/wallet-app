@@ -122,6 +122,52 @@ describe('SendPage', () => {
     expect(screen.getByText('Recipient Phone Number')).toBeInTheDocument();
   });
 
+  it('shows remaining daily limit on the amount step (fix for #7)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SendPage />, { initialEntries: ['/send'], authenticated: auth });
+
+    await user.type(screen.getByPlaceholderText(/0712/), '0712345678');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    await waitFor(() =>
+      expect(screen.getByText(/Remaining today/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/limit KES/i)).toBeInTheDocument();
+  });
+
+  it('disables Continue and shows a warning when amount + fee exceeds remaining limit (fix for #7)', async () => {
+    server.use(
+      http.get('*/api/wallet', () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            walletId: 1,
+            ownerName: 'Alice',
+            phoneNumber: '+254700000001',
+            balance: 1000,
+            currency: 'KES',
+            active: true,
+            dailyTransferLimit: 500,
+            dailyTransferUsed: 400,
+            createdAt: '2026-05-08T09:00:00.000Z',
+          },
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<SendPage />, { initialEntries: ['/send'], authenticated: auth });
+
+    await user.type(screen.getByPlaceholderText(/0712/), '0712345678');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+
+    // Remaining = 500 - 400 = 100. Entering 200 + 2 fee > 100.
+    await user.type(screen.getByPlaceholderText('0.00'), '200');
+    await waitFor(() =>
+      expect(screen.getByText(/exceed today's transfer limit/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+  });
+
   it('shows the 1% transfer fee and post-fee total on the Confirm step (fix for #6)', async () => {
     const user = userEvent.setup();
     renderWithProviders(<SendPage />, { initialEntries: ['/send'], authenticated: auth });
