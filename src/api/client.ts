@@ -19,10 +19,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// On 401/403 the interceptor clears the session and hard-redirects to
+// /login — correct for an expired token mid-session. But on the login
+// page itself a 401 means "wrong password", not "session expired"; the
+// hard reload there raced LoginPage's catch block and erased the
+// "Invalid email or password" message before the user could see it
+// (issue #12). Skip the redirect for the auth endpoints so the page's
+// local error handling can render instead.
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 || err.response?.status === 403) {
+    const url: string = err.config?.url ?? '';
+    const isAuthEndpoint =
+      url.includes('/auth/login') || url.includes('/auth/register');
+    if (
+      (err.response?.status === 401 || err.response?.status === 403) &&
+      !isAuthEndpoint
+    ) {
       sessionStorage.clear();
       window.location.href = '/login';
     }
