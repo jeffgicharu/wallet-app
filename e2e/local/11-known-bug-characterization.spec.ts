@@ -92,31 +92,25 @@ test.describe('11 — known bug characterization', () => {
     await expect(page.getByText(/limit KES/i)).toBeVisible();
   });
 
+  // wallet-app #8 — tapping a transaction row now routes to
+  // /history/:ref and renders the TransactionDetailPage.
   // ------------------------------------------------------------------
-  // wallet-app #8 — Tapping a transaction row goes to /history/{ref}
-  // which is not a registered route. Fixed behavior: detail view loads
-  // and shows the reference. Current behavior: blank / 404 / fallback.
-  // ------------------------------------------------------------------
-  test.fail(
-    'transaction row navigates to unregistered /history/{ref} — issue jeffgicharu/wallet-app#8',
-    async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/');
+  test('transaction row opens the detail page — issue jeffgicharu/wallet-app#8', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
 
-      await page.goto('/history');
-      await expect(page.getByRole('heading', { name: 'Transaction History' })).toBeVisible();
-      const firstRow = page.locator('div.bg-white > button').first();
-      await firstRow.click();
+    await page.goto('/history');
+    await expect(page.getByRole('heading', { name: 'Transaction History' })).toBeVisible();
+    const firstRow = page.locator('div.bg-white > button').first();
+    await firstRow.click();
 
-      // URL should change to /history/<reference>.
-      await page.waitForURL(/\/history\/.+/);
-      // Fixed behavior: a detail heading is visible.
-      await expect(page.getByRole('heading', { name: /Transaction Detail|Details/i })).toBeVisible({ timeout: 2_000 });
-    }
-  );
+    await page.waitForURL(/\/history\/.+/);
+    await expect(page.getByRole('heading', { name: 'Transaction Detail' })).toBeVisible();
+    await expect(page.getByText('Reference')).toBeVisible();
+  });
 
   // ------------------------------------------------------------------
   // wallet-api #2 — AdminController accessible to regular users.
