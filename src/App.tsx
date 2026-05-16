@@ -9,6 +9,7 @@ import { SendPage } from './pages/SendPage';
 import { DepositPage } from './pages/DepositPage';
 import { WithdrawPage } from './pages/WithdrawPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { TransactionDetailPage } from './pages/TransactionDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
 
 const queryClient = new QueryClient({
@@ -28,6 +29,7 @@ export default function App() {
               <Route path="/deposit" element={<DepositPage />} />
               <Route path="/withdraw" element={<WithdrawPage />} />
               <Route path="/history" element={<HistoryPage />} />
+              <Route path="/history/:ref" element={<TransactionDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
           </Routes>
