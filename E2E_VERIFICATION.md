@@ -7,9 +7,13 @@ Browser-driven verification for the wallet pair. This file covers the **SPA side
 | Target | URL | Discipline |
 |---|---|---|
 | Local | `http://localhost:3002` (Vite dev) → proxies `/api` to `http://localhost:8080` (docker-compose wallet-api) | comprehensive, can mutate state, 14 specs, 8 characterizations |
-| Live  | `https://wallet.jeffgicharu.com` → `https://wallet-api.jeffgicharu.com` | gentle, read-only on server state, retries 2, workers 1, 7 specs, 4 characterizations |
+| Live  | `https://wallet.jeffgicharu.com` → `https://wallet-api.jeffgicharu.com` | gentle, read-only on server state, retries 2, workers 1, one shared login (see below), 7 specs |
 
-Generated **2026-05-14** using `@playwright/test@1.60.0` on chromium 1223 + firefox 1522 + webkit 2287. The webkit binary shipped with Playwright 1.60 links against `libicudata.so.74`; this host runs Ubuntu 24.04 with the libicu76 series, so webkit runs are deferred to CI (GitHub Actions runners carry the right shim). Local results below report chromium + firefox.
+Generated **2026-05-17** using `@playwright/test@1.60.0` on chromium 1223 + firefox 1522 + webkit 2287. The webkit binary shipped with Playwright 1.60 links against `libicudata.so.74`; this host runs Ubuntu 24.04 with the libicu76 series, so webkit runs are deferred to CI (GitHub Actions runners carry the right shim). Local results below report chromium + firefox: **20/20 live-smoke green** post-redeploy.
+
+### Live-smoke now shares one login (issue #21 interaction)
+
+The backlog's brute-force guard (wallet-api #21) rate-limits login to **5 attempts / 60 s / IP**. The old live-smoke suite logged in through the UI in almost every test (~16 logins/run, ×3 with retries), which the now-deployed limit correctly throttled — producing login flakes that were *not* product bugs. A `live-smoke-setup` project now performs **one API login per browser** and writes the session to `playwright/.auth/` (gitignored — it holds a real JWT); `seedAuth()` replays it into `sessionStorage` (where the app keeps its JWT — Playwright `storageState` does not persist sessionStorage) via an init script, so authenticated specs never drive the login UI. Specs 01/02/07 (which test the login page/flow itself) keep their own navigation. The four live characterizations (#5/#6/#7/#8) were flipped from `test.fail` to plain assertions now that those fixes are shipped and verified on production.
 
 ## Suite layout
 

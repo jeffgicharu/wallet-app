@@ -42,9 +42,20 @@ export default defineConfig({
     },
 
     // ---------- live-smoke (gentle) ----------
+    // One API login per browser (issue #21 rate-limit friendly); the
+    // smoke specs replay that session via seedAuth instead of logging
+    // in through the UI.
+    {
+      name: 'live-smoke-setup',
+      testDir: './e2e/live-smoke',
+      testMatch: /_auth\.setup\.ts$/,
+      timeout: 30_000,
+      use: { baseURL: LIVE_BASE_URL },
+    },
     {
       name: 'live-smoke-chromium',
       testDir: './e2e/live-smoke',
+      dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
       use: { ...devices['Desktop Chrome'], baseURL: LIVE_BASE_URL },
@@ -52,6 +63,7 @@ export default defineConfig({
     {
       name: 'live-smoke-firefox',
       testDir: './e2e/live-smoke',
+      dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
       use: { ...devices['Desktop Firefox'], baseURL: LIVE_BASE_URL },
@@ -59,6 +71,7 @@ export default defineConfig({
     {
       name: 'live-smoke-webkit',
       testDir: './e2e/live-smoke',
+      dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
       use: { ...devices['Desktop Safari'], baseURL: LIVE_BASE_URL },

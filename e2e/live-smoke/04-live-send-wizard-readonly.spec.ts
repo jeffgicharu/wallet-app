@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { seedAuth } from './_session';
 
 // 04 — Live send wizard, read-only.
 //
 // Walk the send-money wizard up to the confirm step WITHOUT clicking
 // "Enter PIN to Confirm". The live deploy holds real ledger state so
-// the suite must not mutate it.
-//
-// One assertion (the missing "Fee" line) characterizes
-// jeffgicharu/wallet-app#6 and is wrapped in its own test.fail block.
+// the suite must not mutate it. The confirm step now shows the 1% fee
+// line (jeffgicharu/wallet-app#6, shipped). Auth is replayed from the
+// single _auth.setup login (seedAuth) — no UI login, #21-friendly.
 
 test.beforeEach(async ({ page }) => {
   // No context-wide X-E2E-Smoke header — see 01-live-login-loads
@@ -19,14 +19,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function loginAsAlice(page: import('@playwright/test').Page) {
-  await page.goto('/login');
-  await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-  await page.locator('input[placeholder="Password"]').fill('pass1234');
-  await page.getByRole('button', { name: 'Sign In' }).click();
-  await Promise.race([
-    page.waitForURL('**/', { timeout: 15_000 }),
-    page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 }),
-  ]);
+  await seedAuth(page);
+  await page.goto('/');
+  await page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 test.describe('04 — live send wizard (read-only)', () => {
@@ -66,7 +61,7 @@ test.describe('04 — live send wizard (read-only)', () => {
   // corrected behavior; this live-smoke counterpart will flip to
   // expected-pass in PR 21 once the redeploy lands the new wallet-app
   // bundle.
-  test.fail('send confirm step omits transfer fee — issue jeffgicharu/wallet-app#6', async ({ page }) => {
+  test('send confirm step omits transfer fee — issue jeffgicharu/wallet-app#6', async ({ page }) => {
     await loginAsAlice(page);
 
     await page.getByRole('button', { name: 'Send', exact: true }).click();
