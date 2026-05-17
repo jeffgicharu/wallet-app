@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { seedAuth } from './_session';
 
 // 05 — Live multi-tenant probe for jeffgicharu/wallet-api#20.
 //
@@ -29,14 +30,9 @@ test.describe('05 — live multi-tenant probe', () => {
   test(
     'live cross-user lookup probe (wallet-api#20 — local reproduces, live currently does not)',
     async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await Promise.race([
-        page.waitForURL('**/', { timeout: 15_000 }),
-        page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 }),
-      ]);
+      await seedAuth(page);
+      await page.goto('/');
+      await page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 });
 
       const status = await page.evaluate(async () => {
         const token = sessionStorage.getItem('token');

@@ -1,11 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
+import { seedAuth } from './_session';
 
 // 06 — Live bug characterization (wallet-app#5, #7, #8).
 //
-// Each block describes the FIXED behavior. Today every block fails
-// because the fix has not landed. When the fix ships, Playwright
-// reports "unexpected pass" and the test.fail annotation can be
-// removed.
+// Each block asserts the now-shipped FIXED behavior against the live
+// deploy. Authentication is replayed from the single _auth.setup login
+// (seedAuth) rather than driving the UI, so the suite stays under the
+// live #21 login rate limit.
 //
 // Read-only on the live deploy — no submits that move money.
 
@@ -19,14 +20,9 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function loginAsAlice(page: Page) {
-  await page.goto('/login');
-  await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-  await page.locator('input[placeholder="Password"]').fill('pass1234');
-  await page.getByRole('button', { name: 'Sign In' }).click();
-  await Promise.race([
-    page.waitForURL('**/', { timeout: 15_000 }),
-    page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 }),
-  ]);
+  await seedAuth(page);
+  await page.goto('/');
+  await page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 });
 }
 
 test.describe('06 — live known-bug characterization', () => {
@@ -35,7 +31,7 @@ test.describe('06 — live known-bug characterization', () => {
   // Sign In with empty inputs fires POST /api/auth/login.
   // Fixed behavior: no network call until validation passes.
   // -------------------------------------------------------------------
-  test.fail(
+  test(
     'login submits empty form to API — issue jeffgicharu/wallet-app#5',
     async ({ page }) => {
       let loginCalled = false;
@@ -56,7 +52,7 @@ test.describe('06 — live known-bug characterization', () => {
   // wallet-app#7 — Send amount step omits the daily-limit hint.
   // Fixed behavior: a "Daily limit" hint is visible on the amount step.
   // -------------------------------------------------------------------
-  test.fail(
+  test(
     'send amount step omits daily limit — issue jeffgicharu/wallet-app#7',
     async ({ page }) => {
       await loginAsAlice(page);
@@ -68,9 +64,13 @@ test.describe('06 — live known-bug characterization', () => {
       await page.getByRole('button', { name: 'Next' }).click();
 
       // Amount step is now visible. The amount input has placeholder
-      // "0.00". The daily-limit hint should be visible nearby.
+      // "0.00". The fix renders a "Remaining today: KES X (limit KES Y,
+      // used KES Z)" hint sourced from /api/wallet's
+      // dailyTransferLimit / dailyTransferUsed (matches the local
+      // characterization assertion for issue #7).
       await expect(page.locator('input[placeholder="0.00"]')).toBeVisible();
-      await expect(page.getByText(/daily limit/i)).toBeVisible({ timeout: 2_000 });
+      await expect(page.getByText(/Remaining today/i)).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByText(/limit KES/i)).toBeVisible();
     }
   );
 
@@ -81,7 +81,7 @@ test.describe('06 — live known-bug characterization', () => {
   // blank/fallback state.
   // Fixed behavior: a detail view renders for /history/{reference}.
   // -------------------------------------------------------------------
-  test.fail(
+  test(
     'transaction row navigates to unregistered /history/{ref} — issue jeffgicharu/wallet-app#8',
     async ({ page }) => {
       await loginAsAlice(page);

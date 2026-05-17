@@ -14,3 +14,5 @@ reports/mutation/
 test-results/
 playwright-report/
 .playwright/
+# Captured live-smoke auth session — contains a real JWT, never commit
+playwright/.auth/

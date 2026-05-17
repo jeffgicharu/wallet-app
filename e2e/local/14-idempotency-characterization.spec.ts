@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-// wallet-api #10 — Duplicate idempotency key returns 409.
-// Fixed behavior: a repeat call with the same idempotency key returns
-// 200 + the same response body as the original (no side effects).
+// wallet-api #10 — duplicate idempotency key now replays the original
+// response: a repeat transfer with the same key returns 200 + the same
+// reference as the first call (no second transfer, no 409).
 test.describe('14 — idempotency characterization', () => {
-  test.fail(
-    'duplicate idempotency key returns 409 instead of original — issue jeffgicharu/wallet-api#10',
+  test(
+    'duplicate idempotency key replays the original 200 — issue jeffgicharu/wallet-api#10',
     async ({ page }) => {
       await page.goto('/login');
       await page.locator('input[placeholder="Email"]').fill('alice@demo.local');

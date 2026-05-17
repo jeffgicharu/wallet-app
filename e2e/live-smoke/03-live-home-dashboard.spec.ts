@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { seedAuth } from './_session';
 
 // 03 — Live home dashboard.
 //
@@ -21,14 +22,9 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('03 — live home dashboard', () => {
   test('home dashboard shows balance, daily limit, actions, recent section', async ({ page }) => {
-    await page.goto('/login');
-    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-    await page.locator('input[placeholder="Password"]').fill('pass1234');
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await Promise.race([
-      page.waitForURL('**/', { timeout: 15_000 }),
-      page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 }),
-    ]);
+    await seedAuth(page);
+    await page.goto('/');
+    await page.getByText('Available Balance').waitFor({ state: 'visible', timeout: 15_000 });
 
     // Balance card.
     await expect(page.getByText('Available Balance')).toBeVisible();
