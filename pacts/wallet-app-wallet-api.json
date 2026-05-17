@@ -294,14 +294,27 @@
       },
       "response": {
         "body": {
-          "message": "Transaction with this idempotency key has already been processed",
-          "success": false,
+          "data": {
+            "amount": 5000,
+            "createdAt": "2026-05-08T09:00:00Z",
+            "reference": "TRF-idem-pact-dup",
+            "status": "COMPLETED",
+            "type": "TRANSFER"
+          },
+          "message": "Transfer successful",
+          "success": true,
           "timestamp": "2026-05-08T09:00:00Z"
         },
         "headers": {
           "Content-Type": "application/json"
         },
         "matchingRules": {
+          "$.body.data.createdAt": {
+            "match": "type"
+          },
+          "$.body.data.reference": {
+            "match": "type"
+          },
           "$.body.message": {
             "match": "type"
           },
@@ -309,7 +322,7 @@
             "match": "type"
           }
         },
-        "status": 409
+        "status": 200
       }
     },
     {

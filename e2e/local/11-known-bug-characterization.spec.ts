@@ -113,54 +113,49 @@ test.describe('11 — known bug characterization', () => {
   });
 
   // ------------------------------------------------------------------
-  // wallet-api #2 — AdminController accessible to regular users.
-  // Fixed behavior: 403 Forbidden for non-admin tokens.
+  // wallet-api #2 fixed: a regular (USER-role) JWT is forbidden from
+  // /api/admin/**. Strict assertion lives in wallet-api's
+  // AuthorizationIntegrationTest; this is the cross-repo smoke.
   // ------------------------------------------------------------------
-  test.fail(
-    'admin stats accessible to regular user — issue jeffgicharu/wallet-api#2',
-    async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/');
+  test('regular user is forbidden from admin stats — issue jeffgicharu/wallet-api#2', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
 
-      const status = await page.evaluate(async () => {
-        const token = sessionStorage.getItem('token');
-        const res = await fetch('/api/admin/stats', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return res.status;
+    const status = await page.evaluate(async () => {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch('/api/admin/stats', {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      return res.status;
+    });
 
-      // Fixed behavior: regular user gets 403.
-      expect(status).toBe(403);
-    }
-  );
+    expect(status).toBe(403);
+  });
 
   // ------------------------------------------------------------------
-  // wallet-api #20 — Cross-user transaction lookup.
-  // Alice fetches DEP-seed-bob. Fixed behavior: 403 or 404.
+  // wallet-api #20 fixed: alice cannot read bob's transaction by
+  // reference — 404 (same as missing, no info leak). Strict assertion
+  // lives in wallet-api's CrossUserIsolationSecurityTest.
   // ------------------------------------------------------------------
-  test.fail(
-    'cross-user transaction lookup returns 200 — issue jeffgicharu/wallet-api#20',
-    async ({ page }) => {
-      await page.goto('/login');
-      await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
-      await page.locator('input[placeholder="Password"]').fill('pass1234');
-      await page.getByRole('button', { name: 'Sign In' }).click();
-      await page.waitForURL('**/');
+  test('cross-user transaction lookup is rejected — issue jeffgicharu/wallet-api#20', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('input[placeholder="Email"]').fill('alice@demo.local');
+    await page.locator('input[placeholder="Password"]').fill('pass1234');
+    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.waitForURL('**/');
 
-      const status = await page.evaluate(async () => {
-        const token = sessionStorage.getItem('token');
-        const res = await fetch('/api/wallet/transactions/DEP-seed-bob', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        return res.status;
+    const status = await page.evaluate(async () => {
+      const token = sessionStorage.getItem('token');
+      const res = await fetch('/api/wallet/transactions/DEP-seed-bob', {
+        headers: { Authorization: `Bearer ${token}` },
       });
+      return res.status;
+    });
 
-      // Fixed behavior: not 200.
-      expect(status).not.toBe(200);
-    }
-  );
+    // Not 200 (owner check enforced); 404 is the no-info-leak response.
+    expect(status).not.toBe(200);
+  });
 });
