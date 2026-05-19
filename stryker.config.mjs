@@ -43,6 +43,9 @@ export default {
     'src/pages/HomePage.test.tsx',
     'src/pages/HistoryPage.test.tsx',
     'src/pages/ProfilePage.test.tsx',
+    'src/pages/NotFoundPage.test.tsx',
+    'src/lib/money.test.ts',
+    'src/lib/transactions.test.ts',
   ],
 
   // Only mutate the source files that actually have tests. Including
@@ -57,6 +60,9 @@ export default {
     'src/pages/HomePage.tsx',
     'src/pages/HistoryPage.tsx',
     'src/pages/ProfilePage.tsx',
+    'src/pages/NotFoundPage.tsx',
+    'src/lib/money.ts',
+    'src/lib/transactions.ts',
   ],
 
   // Re-run only the tests that exercise each mutated line. Roughly halves

@@ -11,6 +11,7 @@ import { WithdrawPage } from './pages/WithdrawPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { TransactionDetailPage } from './pages/TransactionDetailPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 15000, retry: 1 } },
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="/history/:ref" element={<TransactionDetailPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </BrowserRouter>
         <Toaster position="top-center" />

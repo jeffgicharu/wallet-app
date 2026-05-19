@@ -127,6 +127,23 @@ describe('LoginPage', () => {
     expect(loginCalls).toBe(0);
   });
 
+  it('fills the form with the right credentials for each demo chip', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />, { initialEntries: ['/login'] });
+    const email = () => screen.getByPlaceholderText('Email');
+    const password = () => screen.getByPlaceholderText('Password');
+
+    for (const [label, expected] of [
+      ['Alice', 'alice@demo.local'],
+      ['Bob', 'bob@demo.local'],
+      ['Carol', 'carol@demo.local'],
+    ] as const) {
+      await user.click(screen.getByRole('button', { name: label }));
+      expect(email()).toHaveValue(expected);
+      expect(password()).toHaveValue('pass1234');
+    }
+  });
+
   /**
    * a11y check for the rendered form. Inputs use placeholder-as-label, which
    * axe flags via the `label` rule. The other rules (colour contrast, ARIA

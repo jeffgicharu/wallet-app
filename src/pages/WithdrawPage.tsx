@@ -5,6 +5,7 @@ import { PinPad } from '../components/PinPad';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { formatKES } from '../lib/money';
 
 export function WithdrawPage() {
   const navigate = useNavigate();
@@ -25,8 +26,6 @@ export function WithdrawPage() {
     },
   });
 
-  const fmt = (n: number) => n.toLocaleString('en-KE', { minimumFractionDigits: 2 });
-
   if (done) {
     return (
       <div className="px-6 pt-16 text-center">
@@ -34,7 +33,7 @@ export function WithdrawPage() {
           <CheckCircle size={40} className="text-green-600" />
         </div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">Withdrawal Successful</h3>
-        <p className="text-gray-500">KES {fmt(parseFloat(amount))} withdrawn</p>
+        <p className="text-gray-500">{formatKES(parseFloat(amount))} withdrawn</p>
         <button onClick={() => navigate('/')} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-medium">Done</button>
       </div>
     );

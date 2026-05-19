@@ -15,6 +15,16 @@ const loginSchema = z.object({
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>;
 
+// Public demo accounts. Surfacing them on the sign-in screen means a
+// first-time visitor can actually get into the app instead of being
+// locked out by a credential wall.
+const DEMO_ACCOUNTS = [
+  { label: 'Alice', email: 'alice@demo.local' },
+  { label: 'Bob', email: 'bob@demo.local' },
+  { label: 'Carol', email: 'carol@demo.local' },
+];
+const DEMO_PASSWORD = 'pass1234';
+
 export function LoginPage() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
@@ -116,6 +126,32 @@ export function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-5 rounded-2xl bg-white/10 p-4 text-center">
+          <p className="text-xs text-indigo-200">
+            Demo accounts — tap to fill, then Sign In
+          </p>
+          <div className="mt-3 flex justify-center gap-2">
+            {DEMO_ACCOUNTS.map(acc => (
+              <button
+                key={acc.email}
+                type="button"
+                onClick={() => {
+                  setEmail(acc.email);
+                  setPassword(DEMO_PASSWORD);
+                  setFieldErrors({});
+                  setError('');
+                }}
+                className="flex-1 rounded-xl bg-white/15 px-3 py-2 text-sm font-medium text-white hover:bg-white/25 transition-colors"
+              >
+                {acc.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-indigo-300">
+            PIN <span className="font-medium text-indigo-100">1234</span> · resets daily
+          </p>
+        </div>
       </div>
     </div>
   );

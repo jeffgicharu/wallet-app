@@ -15,13 +15,18 @@ A mobile-first React frontend for the [wallet-api](https://github.com/jeffgichar
 
 Demo accounts (state resets daily at 03:00 UTC):
 
-| Email | Password | PIN | Approx. balance |
-|---|---|---|---|
-| `alice@demo.local` | `pass1234` | `1234` | KES 50,000 |
-| `bob@demo.local`   | `pass1234` | `1234` | KES 25,000 |
-| `carol@demo.local` | `pass1234` | `1234` | KES 10,000 |
+| Email | Password | PIN |
+|---|---|---|
+| `alice@demo.local` | `pass1234` | `1234` |
+| `bob@demo.local`   | `pass1234` | `1234` |
+| `carol@demo.local` | `pass1234` | `1234` |
 
-This is a public demo. Do not use real PII, real money, or real credentials.
+Each account is funded with a working balance and roughly 90 days of
+varied history — deposits, cash-outs, peer transfers to and from named
+contacts, transfer fees, and a reversal — so the app has something real
+to show. You can also tap a demo account on the sign-in screen to fill
+the form. This is a public demo: do not use real PII, real money, or
+real credentials.
 
 The key difference from the other two frontends (merchant-dashboard and lending-portal) is that this one is designed for phones: bottom tab navigation, touch-friendly buttons, a custom numeric PIN pad, mobile-width layout, and transaction flows that work like step-by-step wizards.
 

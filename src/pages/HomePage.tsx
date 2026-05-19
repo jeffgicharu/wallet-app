@@ -4,11 +4,12 @@ import { walletApi } from '../api/wallet';
 import { useAuth } from '../context/AuthContext';
 import { Send, Download, Upload, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
-import type { Transaction } from '../types';
+import { formatKES, formatSignedKES } from '../lib/money';
+import { direction, isFeeRow, transactionLabel } from '../lib/transactions';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { fullName } = useAuth();
+  const { fullName, phone } = useAuth();
   const [showBalance, setShowBalance] = useState(true);
 
   const { data: wallet, isLoading } = useQuery({
@@ -17,19 +18,18 @@ export function HomePage() {
     refetchInterval: 30000,
   });
 
+  // Fetch a few extra so that, after folding out standalone FEE rows,
+  // there are still up to 5 real transactions to show.
   const { data: txns } = useQuery({
     queryKey: ['recent-txns'],
-    queryFn: () => walletApi.getTransactions(0, 5).then(r => r.data.data.content),
+    queryFn: () =>
+      walletApi.getTransactions(0, 10).then(r =>
+        r.data.data.content.filter(t => !isFeeRow(t)).slice(0, 5),
+      ),
   });
 
-  const fmt = (n: number) => n.toLocaleString('en-KE', { minimumFractionDigits: 2 });
+  const myPhone = wallet?.phoneNumber ?? phone;
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' });
-
-  const txnIcon = (t: Transaction) => {
-    if (t.type === 'TRANSFER' && t.senderPhone) return { symbol: '-', color: 'text-red-500' };
-    if (t.type === 'WITHDRAWAL') return { symbol: '-', color: 'text-red-500' };
-    return { symbol: '+', color: 'text-green-500' };
-  };
 
   return (
     <div>
@@ -43,7 +43,7 @@ export function HomePage() {
               <div className="h-8 w-40 bg-indigo-500 rounded animate-pulse" />
             ) : (
               <p className="text-3xl font-bold">
-                {showBalance ? `KES ${fmt(wallet?.balance || 0)}` : 'KES ****'}
+                {showBalance ? formatKES(wallet?.balance) : 'KES ****'}
               </p>
             )}
           </div>
@@ -53,7 +53,7 @@ export function HomePage() {
         </div>
         {wallet && (
           <p className="text-xs text-indigo-300 mt-3">
-            Daily limit: KES {fmt(wallet.dailyTransferLimit)} (used: KES {fmt(wallet.dailyTransferUsed)})
+            Daily limit: {formatKES(wallet.dailyTransferLimit)} (used: {formatKES(wallet.dailyTransferUsed)})
           </p>
         )}
       </div>
@@ -86,19 +86,20 @@ export function HomePage() {
 
         <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50">
           {(txns || []).map(t => {
-            const { symbol, color } = txnIcon(t);
+            const dir = direction(t, myPhone);
+            const color = dir === 'out' ? 'text-red-500' : 'text-green-500';
             return (
               <button key={t.reference} onClick={() => navigate(`/history/${t.reference}`)}
                 className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 transition-colors">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${color} bg-gray-50`}>
-                  {symbol}
+                  {dir === 'out' ? '-' : '+'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{t.description || t.type}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{transactionLabel(t, myPhone)}</p>
                   <p className="text-xs text-gray-400">{fmtDate(t.createdAt)}</p>
                 </div>
                 <p className={`text-sm font-semibold ${color}`}>
-                  {symbol}KES {fmt(t.amount)}
+                  {formatSignedKES(t.amount, dir)}
                 </p>
               </button>
             );
