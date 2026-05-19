@@ -36,6 +36,7 @@ export default {
   // test files explicitly bypasses the discovery step.
   testFiles: [
     'src/components/PinPad.test.tsx',
+    'src/components/TransactionIcon.test.tsx',
     'src/pages/LoginPage.test.tsx',
     'src/pages/SendPage.test.tsx',
     'src/pages/DepositPage.test.tsx',
@@ -57,6 +58,7 @@ export default {
   // useful — the audit covers that gap separately.
   mutate: [
     'src/components/PinPad.tsx',
+    'src/components/TransactionIcon.tsx',
     'src/pages/LoginPage.tsx',
     'src/pages/SendPage.tsx',
     'src/pages/DepositPage.tsx',
