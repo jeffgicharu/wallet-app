@@ -10,8 +10,8 @@ const tabs = [
 
 export function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-      <div className="max-w-md mx-auto flex justify-around">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden">
+      <div className="max-w-md md:max-w-xl mx-auto flex justify-around">
         {tabs.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

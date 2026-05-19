@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { formatKES } from '../lib/money';
 import { newIdempotencyKey } from '../lib/idempotency';
+import { useIsDesktop } from '../lib/useMediaQuery';
 
 type Step = 'phone' | 'amount' | 'confirm' | 'pin' | 'success';
 
@@ -20,6 +21,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 export function SendPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isDesktop = useIsDesktop();
   const [step, setStep] = useState<Step>('phone');
   const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('');
@@ -57,17 +59,15 @@ export function SendPage() {
     },
   });
 
-  return (
-    <div className="px-6 pt-6">
-      {step !== 'success' && (
-        <button onClick={() => step === 'phone' ? navigate('/') : setStep(step === 'amount' ? 'phone' : step === 'confirm' ? 'amount' : 'phone')}
-          className="flex items-center gap-2 text-gray-500 text-sm mb-6">
-          <ArrowLeft size={16} /> {step === 'phone' ? 'Home' : 'Back'}
-        </button>
-      )}
+  const amountNum = parseFloat(amount);
+  const liveFee = isNaN(amountNum) ? 0 : round2(amountNum * TRANSFER_FEE_RATE);
+  const liveTotal = isNaN(amountNum) ? 0 : round2(amountNum + liveFee);
+  const remaining = wallet
+    ? round2(wallet.dailyTransferLimit - wallet.dailyTransferUsed)
+    : undefined;
 
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Send Money</h2>
-
+  const stepBody = (
+    <>
       {step === 'phone' && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Recipient Phone Number</label>
@@ -75,19 +75,15 @@ export function SendPage() {
             placeholder="0712 345 678" autoFocus
             className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
           <button onClick={() => phone.length >= 10 && setStep('amount')} disabled={phone.length < 10}
-            className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40">
+            className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
             Next
           </button>
         </div>
       )}
 
       {step === 'amount' && (() => {
-        const amountNum = parseFloat(amount);
         const projectedFee = isNaN(amountNum) ? 0 : round2(amountNum * TRANSFER_FEE_RATE);
         const projectedDebit = isNaN(amountNum) ? 0 : round2(amountNum + projectedFee);
-        const remaining = wallet
-          ? round2(wallet.dailyTransferLimit - wallet.dailyTransferUsed)
-          : undefined;
         const overLimit =
           remaining !== undefined && !isNaN(amountNum) && projectedDebit > remaining;
         const underMin = !amount || amountNum < 10;
@@ -113,50 +109,93 @@ export function SendPage() {
               </p>
             )}
             <button onClick={() => { if (!disabled) { setIdemKey(newIdempotencyKey()); setStep('confirm'); } }} disabled={disabled}
-              className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40">
+              className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
               Next
             </button>
           </div>
         );
       })()}
 
-      {step === 'confirm' && (() => {
-        const amountNum = parseFloat(amount);
-        const fee = round2(amountNum * TRANSFER_FEE_RATE);
-        const total = round2(amountNum + fee);
-        return (
-          <div className="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-center mb-6">Confirm Transfer</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between"><span className="text-gray-500">To</span><span className="font-medium">{phone}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">{formatKES(amountNum)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Fee (1%)</span><span className="font-medium">{formatKES(fee)}</span></div>
-              <hr />
-              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">{formatKES(total)}</span></div>
-            </div>
-            <button onClick={() => setStep('pin')} className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium">
-              Enter PIN to Confirm
-            </button>
+      {step === 'confirm' && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-center mb-6">Confirm Transfer</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between"><span className="text-gray-500">To</span><span className="font-medium">{phone}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">{formatKES(amountNum)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Fee (1%)</span><span className="font-medium">{formatKES(liveFee)}</span></div>
+            <hr />
+            <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">{formatKES(liveTotal)}</span></div>
           </div>
-        );
-      })()}
+          <button onClick={() => setStep('pin')} className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+            Enter PIN to Confirm
+          </button>
+        </div>
+      )}
 
       {step === 'pin' && (
         <PinPad title="Enter M-Wallet PIN" onComplete={pin => mutation.mutate(pin)}
           onCancel={() => setStep('confirm')} loading={mutation.isPending} />
       )}
+    </>
+  );
 
-      {step === 'success' && (
-        <div className="text-center pt-10">
+  return (
+    <div className="px-6 pt-6 lg:px-0 lg:pt-4">
+      {step !== 'success' && (
+        <button onClick={() => step === 'phone' ? navigate('/') : setStep(step === 'amount' ? 'phone' : step === 'confirm' ? 'amount' : 'phone')}
+          className="flex items-center gap-2 text-gray-500 text-sm mb-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
+          <ArrowLeft size={16} /> {step === 'phone' ? 'Home' : 'Back'}
+        </button>
+      )}
+
+      <h2 className="text-xl font-bold text-gray-900 mb-6 lg:text-2xl">Send Money</h2>
+
+      {step === 'success' ? (
+        <div className="text-center pt-10 lg:pt-20">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
             <CheckCircle size={40} className="text-green-600" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Transfer Successful</h3>
           <p className="text-gray-500 mb-1">{formatKES(parseFloat(amount))} sent to {phone}</p>
           <p className="text-xs text-gray-400 font-mono">{reference}</p>
-          <button onClick={() => navigate('/')} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-medium">
+          <button onClick={() => navigate('/')} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
             Done
           </button>
+        </div>
+      ) : (
+        <div className="lg:grid lg:grid-cols-[minmax(0,30rem)_1fr] lg:gap-8 lg:items-start">
+          <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-8">
+            {stepBody}
+          </div>
+          {isDesktop && (
+            <aside className="rounded-2xl border border-gray-100 bg-white p-6">
+              <h3 className="text-sm font-semibold text-gray-900">Transfer summary</h3>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Recipient</dt>
+                  <dd className="font-medium text-gray-900">{phone || '—'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Amount</dt>
+                  <dd className="font-medium text-gray-900">{amount ? formatKES(amountNum) : '—'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Fee (1%)</dt>
+                  <dd className="font-medium text-gray-900">{amount ? formatKES(liveFee) : '—'}</dd>
+                </div>
+                <div className="flex justify-between border-t border-gray-100 pt-3">
+                  <dt className="text-gray-500">Total</dt>
+                  <dd className="font-bold text-gray-900">{amount ? formatKES(liveTotal) : '—'}</dd>
+                </div>
+                {remaining !== undefined && (
+                  <div className="flex justify-between">
+                    <dt className="text-gray-500">Remaining today</dt>
+                    <dd className="font-medium text-gray-900">{formatKES(remaining)}</dd>
+                  </div>
+                )}
+              </dl>
+            </aside>
+          )}
         </div>
       )}
     </div>
