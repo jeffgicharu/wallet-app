@@ -41,6 +41,9 @@
           "Content-Type": "application/json"
         },
         "matchingRules": {
+          "$.body.data.amount": {
+            "match": "type"
+          },
           "$.body.data.createdAt": {
             "match": "type"
           },
@@ -309,6 +312,9 @@
           "Content-Type": "application/json"
         },
         "matchingRules": {
+          "$.body.data.amount": {
+            "match": "type"
+          },
           "$.body.data.createdAt": {
             "match": "type"
           },
@@ -595,6 +601,9 @@
           "Content-Type": "application/json"
         },
         "matchingRules": {
+          "$.body.data.amount": {
+            "match": "type"
+          },
           "$.body.data.createdAt": {
             "match": "type"
           },
@@ -757,6 +766,9 @@
           "Content-Type": "application/json"
         },
         "matchingRules": {
+          "$.body.data.amount": {
+            "match": "type"
+          },
           "$.body.data.createdAt": {
             "match": "type"
           },

@@ -46,6 +46,7 @@ export default {
     'src/pages/NotFoundPage.test.tsx',
     'src/lib/money.test.ts',
     'src/lib/transactions.test.ts',
+    'src/lib/idempotency.test.ts',
   ],
 
   // Only mutate the source files that actually have tests. Including
@@ -63,6 +64,7 @@ export default {
     'src/pages/NotFoundPage.tsx',
     'src/lib/money.ts',
     'src/lib/transactions.ts',
+    'src/lib/idempotency.ts',
   ],
 
   // Re-run only the tests that exercise each mutated line. Roughly halves

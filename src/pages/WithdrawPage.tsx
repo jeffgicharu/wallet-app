@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatKES } from '../lib/money';
+import { newIdempotencyKey } from '../lib/idempotency';
 
 export function WithdrawPage() {
   const navigate = useNavigate();
@@ -13,9 +14,12 @@ export function WithdrawPage() {
   const [amount, setAmount] = useState('');
   const [showPin, setShowPin] = useState(false);
   const [done, setDone] = useState(false);
+  // Stable for this withdrawal attempt so a retry replays rather than
+  // double-debits; the backend prefixes it as WDR-{key}.
+  const [idemKey] = useState(newIdempotencyKey);
 
   const mutation = useMutation({
-    mutationFn: (pin: string) => walletApi.withdraw(parseFloat(amount), pin, 'WDR-' + Date.now()),
+    mutationFn: (pin: string) => walletApi.withdraw(parseFloat(amount), pin, idemKey),
     onSuccess: () => {
       setDone(true);
       queryClient.invalidateQueries({ queryKey: ['wallet'] });
