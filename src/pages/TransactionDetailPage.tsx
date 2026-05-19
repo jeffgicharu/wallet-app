@@ -59,7 +59,7 @@ export function TransactionDetailPage() {
       )}
 
       {data && (
-        <div className="lg:grid lg:grid-cols-[minmax(0,32rem)_1fr] lg:gap-8 lg:items-start">
+        <div className="lg:grid lg:grid-cols-[minmax(0,36rem)_20rem] lg:gap-8 lg:items-start">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-8">
             <div className="text-center mb-6">
               <p
