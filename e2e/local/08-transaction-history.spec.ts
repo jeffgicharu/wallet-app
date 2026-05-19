@@ -25,8 +25,12 @@ test.describe('08 — transaction history', () => {
   test('seeded deposit appears in history', async ({ page }) => {
     await page.goto('/history');
     await expect(page.getByText('Cash deposit').first()).toBeVisible({ timeout: 10_000 });
-    // Status badge ("COMPLETED") shows alongside the amount.
-    await expect(page.getByText('COMPLETED').first()).toBeVisible();
+    // The deposit is incoming, so its amount renders as "+ KES <amount>".
+    // A COMPLETED status is intentionally NOT printed on every row — only
+    // exceptional states (REVERSED / FAILED) are surfaced, to keep the
+    // list uncluttered like a real mobile-money statement.
+    await expect(page.getByText(/\+ KES\s[\d,]+\.\d{2}/).first()).toBeVisible();
+    await expect(page.getByText('COMPLETED')).toHaveCount(0);
   });
 
   test('history is reachable from the bottom-nav', async ({ page }) => {

@@ -127,6 +127,16 @@ describe('LoginPage', () => {
     expect(loginCalls).toBe(0);
   });
 
+  it('fills the form when a demo account chip is tapped', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginPage />, { initialEntries: ['/login'] });
+
+    await user.click(screen.getByRole('button', { name: 'Bob' }));
+
+    expect(screen.getByPlaceholderText('Email')).toHaveValue('bob@demo.local');
+    expect(screen.getByPlaceholderText('Password')).toHaveValue('pass1234');
+  });
+
   /**
    * a11y check for the rendered form. Inputs use placeholder-as-label, which
    * axe flags via the `label` rule. The other rules (colour contrast, ARIA
