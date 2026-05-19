@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { formatKES, formatSignedKES } from '../lib/money';
 import { direction } from '../lib/transactions';
+import { counterpartyName } from '../lib/counterparty';
 import { useIsDesktop } from '../lib/useMediaQuery';
 
 export function TransactionDetailPage() {
@@ -92,13 +93,21 @@ export function TransactionDetailPage() {
               {data.senderPhone && (
                 <div className="flex justify-between">
                   <span className="text-gray-500">From</span>
-                  <span className="font-medium">{data.senderPhone}</span>
+                  <span className="font-medium">
+                    {counterpartyName(data.senderPhone)
+                      ? `${counterpartyName(data.senderPhone)} · ${data.senderPhone}`
+                      : data.senderPhone}
+                  </span>
                 </div>
               )}
               {data.receiverPhone && (
                 <div className="flex justify-between">
                   <span className="text-gray-500">To</span>
-                  <span className="font-medium">{data.receiverPhone}</span>
+                  <span className="font-medium">
+                    {counterpartyName(data.receiverPhone)
+                      ? `${counterpartyName(data.receiverPhone)} · ${data.receiverPhone}`
+                      : data.receiverPhone}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between">

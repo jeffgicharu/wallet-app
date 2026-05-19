@@ -14,8 +14,9 @@ describe('HistoryPage', () => {
     await waitFor(() =>
       expect(screen.getByText(/Cash deposit/i)).toBeInTheDocument(),
     );
-    expect(screen.getAllByText(/Sent to \+254700000002/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Received from \+254700000003/i)).toBeInTheDocument();
+    // +254700000002 → Bob, +254700000003 → Carol (seeded demo users).
+    expect(screen.getAllByText(/Sent to Bob/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Received from Carol/i)).toBeInTheDocument();
     expect(screen.getByText(/Cash withdrawal/i)).toBeInTheDocument();
     // The reversal entry is labelled, and the reversed original keeps a
     // visible REVERSED badge (COMPLETED rows print no status).

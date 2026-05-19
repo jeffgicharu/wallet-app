@@ -201,8 +201,13 @@ describe('desktop layout — Transaction detail', () => {
     expect(screen.getByText('Rent share')).toBeInTheDocument();
     expect(screen.getByText('TRANSFER')).toBeInTheDocument();
     expect(screen.getByText('KES 42.00')).toBeInTheDocument(); // fee > 0 branch
-    expect(screen.getByText('+254700000001')).toBeInTheDocument(); // From
-    expect(screen.getByText('+254700000002')).toBeInTheDocument(); // To
+    // Known counterparties resolve to "Name · number" on the receipt.
+    expect(
+      screen.getByText('Alice · +254700000001'),
+    ).toBeInTheDocument(); // From
+    expect(
+      screen.getByText('Bob · +254700000002'),
+    ).toBeInTheDocument(); // To
     expect(screen.getByText(/This is a completed transfer\./)).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back to history' }));
