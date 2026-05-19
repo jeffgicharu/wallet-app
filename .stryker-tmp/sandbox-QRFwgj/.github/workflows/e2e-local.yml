@@ -1,0 +1,85 @@
+name: E2E local
+
+# Brings up the wallet-api stack via docker-compose, seeds demo users + balances,
+# starts the wallet-app dev server, and runs the comprehensive Playwright suite
+# (chromium + firefox + webkit). Characterization tests for known bugs are
+# annotated test.fail(), so a baseline-clean run is the expected state today.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Clone wallet-api alongside for docker-compose
+        run: |
+          git clone --depth 1 https://github.com/jeffgicharu/wallet-api.git ../wallet-api
+
+      - name: Start wallet-api stack
+        working-directory: ../wallet-api
+        run: |
+          docker compose up -d --build
+          # Wait for the API to report healthy.
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/actuator/health 2>/dev/null | grep -q UP; then
+              echo "wallet-api healthy after ${i} attempts"; break
+            fi
+            sleep 2
+          done
+
+      - name: Seed demo users + balances
+        run: bash e2e/seed-local-demo.sh
+
+      - name: Start wallet-app dev server
+        run: |
+          npm run dev > /tmp/wallet-app-dev.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:3002/ -o /dev/null; then
+              echo "wallet-app dev server up after ${i} attempts"; break
+            fi
+            sleep 2
+          done
+
+      - name: Run Playwright local suite
+        run: npm run test:e2e:local
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-local
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright test-results (traces, videos)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-local
+          path: test-results/
+          retention-days: 14
+
+      - name: Tear down wallet-api stack
+        if: always()
+        working-directory: ../wallet-api
+        run: docker compose down -v

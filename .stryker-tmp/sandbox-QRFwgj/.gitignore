@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+*.local
+
+# Test coverage output
+coverage/
+
+# Stryker output and sandbox
+reports/mutation/
+.stryker-tmp/
+
+# Playwright artifacts
+test-results/
+playwright-report/
+.playwright/
+# Captured live-smoke auth session — contains a real JWT, never commit
+playwright/.auth/
