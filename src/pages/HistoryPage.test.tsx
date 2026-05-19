@@ -14,11 +14,21 @@ describe('HistoryPage', () => {
     await waitFor(() =>
       expect(screen.getByText(/Cash deposit/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Sent to \+254700000002/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Sent to \+254700000002/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Received from \+254700000003/i)).toBeInTheDocument();
     expect(screen.getByText(/Cash withdrawal/i)).toBeInTheDocument();
+    // The reversal entry is labelled, and the reversed original keeps a
+    // visible REVERSED badge (COMPLETED rows print no status).
+    expect(screen.getByText('Reversal')).toBeInTheDocument();
+    expect(screen.getByText('REVERSED')).toBeInTheDocument();
+    expect(screen.queryByText('COMPLETED')).not.toBeInTheDocument();
+
+    // The standalone FEE row is folded out of the list.
+    expect(screen.queryByText(/Transfer fee/i)).not.toBeInTheDocument();
 
     expect(screen.getAllByText(/^- KES/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/^\+ KES/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('+ KES 3,000.00')).toBeInTheDocument();
   });
 
   it('shows a friendly empty state when the API returns no transactions', async () => {
