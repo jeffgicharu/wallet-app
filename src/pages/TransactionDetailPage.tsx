@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { walletApi } from '../api/wallet';
+import { useAuth } from '../context/AuthContext';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
-import type { Transaction } from '../types';
+import { formatKES, formatSignedKES } from '../lib/money';
+import { direction } from '../lib/transactions';
 
 export function TransactionDetailPage() {
   const { ref = '' } = useParams<{ ref: string }>();
   const navigate = useNavigate();
+  const { phone } = useAuth();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['transaction', ref],
@@ -15,7 +18,6 @@ export function TransactionDetailPage() {
     retry: false,
   });
 
-  const fmt = (n: number) => n.toLocaleString('en-KE', { minimumFractionDigits: 2 });
   const fmtDate = (d: string) =>
     new Date(d).toLocaleString('en-KE', {
       day: 'numeric',
@@ -24,13 +26,6 @@ export function TransactionDetailPage() {
       hour: '2-digit',
       minute: '2-digit',
     });
-
-  const isCredit = (t: Transaction) =>
-    !(
-      (t.type === 'TRANSFER' && t.senderPhone) ||
-      t.type === 'WITHDRAWAL' ||
-      t.type === 'FEE'
-    );
 
   return (
     <div className="px-6 pt-6">
@@ -65,10 +60,10 @@ export function TransactionDetailPage() {
           <div className="text-center mb-6">
             <p
               className={`text-3xl font-bold ${
-                isCredit(data) ? 'text-green-600' : 'text-red-600'
+                direction(data, phone) === 'in' ? 'text-green-600' : 'text-red-600'
               }`}
             >
-              {isCredit(data) ? '+' : '-'} KES {fmt(data.amount)}
+              {formatSignedKES(data.amount, direction(data, phone))}
             </p>
             <p className="mt-1 text-sm text-gray-500">{data.description}</p>
           </div>
@@ -88,7 +83,7 @@ export function TransactionDetailPage() {
             {data.fee > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Fee</span>
-                <span className="font-medium">KES {fmt(data.fee)}</span>
+                <span className="font-medium">{formatKES(data.fee)}</span>
               </div>
             )}
             {data.senderPhone && (

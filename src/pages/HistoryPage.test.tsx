@@ -14,11 +14,11 @@ describe('HistoryPage', () => {
     await waitFor(() =>
       expect(screen.getByText(/Cash deposit/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Transfer to Bob/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sent to \+254700000002/i)).toBeInTheDocument();
     expect(screen.getByText(/Cash withdrawal/i)).toBeInTheDocument();
 
-    expect(screen.getAllByText(/^-KES/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/^\+KES/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/^- KES/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/^\+ KES/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows a friendly empty state when the API returns no transactions', async () => {

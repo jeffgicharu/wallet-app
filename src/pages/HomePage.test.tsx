@@ -42,12 +42,13 @@ describe('HomePage', () => {
     await waitFor(() =>
       expect(screen.getByText(/Cash deposit/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Transfer to Bob/i)).toBeInTheDocument();
+    // Alice is the sender of TRF-001, so it reads as an outgoing send.
+    expect(screen.getByText(/Sent to \+254700000002/i)).toBeInTheDocument();
     expect(screen.getByText(/Cash withdrawal/i)).toBeInTheDocument();
 
     // Outgoing transactions render the red colour class; incoming the green.
-    const outgoing = screen.getAllByText(/^-KES/);
-    const incoming = screen.getAllByText(/^\+KES/);
+    const outgoing = screen.getAllByText(/^- KES/);
+    const incoming = screen.getAllByText(/^\+ KES/);
     expect(outgoing.length).toBeGreaterThanOrEqual(1);
     expect(incoming.length).toBeGreaterThanOrEqual(1);
   });

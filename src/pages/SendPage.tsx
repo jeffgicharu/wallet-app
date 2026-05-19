@@ -5,6 +5,7 @@ import { PinPad } from '../components/PinPad';
 import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { formatKES } from '../lib/money';
 
 type Step = 'phone' | 'amount' | 'confirm' | 'pin' | 'success';
 
@@ -50,8 +51,6 @@ export function SendPage() {
     },
   });
 
-  const fmt = (n: number) => n.toLocaleString('en-KE', { minimumFractionDigits: 2 });
-
   return (
     <div className="px-6 pt-6">
       {step !== 'success' && (
@@ -96,9 +95,9 @@ export function SendPage() {
               className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-2xl text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
             {remaining !== undefined && (
               <p className="mt-2 text-xs text-gray-500">
-                Remaining today: KES {fmt(remaining)}{' '}
+                Remaining today: {formatKES(remaining)}{' '}
                 <span className="text-gray-400">
-                  (limit KES {fmt(wallet!.dailyTransferLimit)}, used KES {fmt(wallet!.dailyTransferUsed)})
+                  (limit {formatKES(wallet!.dailyTransferLimit)}, used {formatKES(wallet!.dailyTransferUsed)})
                 </span>
               </p>
             )}
@@ -124,10 +123,10 @@ export function SendPage() {
             <h3 className="text-lg font-semibold text-center mb-6">Confirm Transfer</h3>
             <div className="space-y-4">
               <div className="flex justify-between"><span className="text-gray-500">To</span><span className="font-medium">{phone}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">KES {fmt(amountNum)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Fee (1%)</span><span className="font-medium">KES {fmt(fee)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-medium">{formatKES(amountNum)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Fee (1%)</span><span className="font-medium">{formatKES(fee)}</span></div>
               <hr />
-              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">KES {fmt(total)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Total</span><span className="text-lg font-bold">{formatKES(total)}</span></div>
             </div>
             <button onClick={() => setStep('pin')} className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium">
               Enter PIN to Confirm
@@ -147,7 +146,7 @@ export function SendPage() {
             <CheckCircle size={40} className="text-green-600" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Transfer Successful</h3>
-          <p className="text-gray-500 mb-1">KES {fmt(parseFloat(amount))} sent to {phone}</p>
+          <p className="text-gray-500 mb-1">{formatKES(parseFloat(amount))} sent to {phone}</p>
           <p className="text-xs text-gray-400 font-mono">{reference}</p>
           <button onClick={() => navigate('/')} className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-medium">
             Done

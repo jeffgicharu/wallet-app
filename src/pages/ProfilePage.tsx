@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { walletApi } from '../api/wallet';
 import { useAuth } from '../context/AuthContext';
 import { User, Phone, Wallet, LogOut } from 'lucide-react';
+import { formatKES } from '../lib/money';
 
 export function ProfilePage() {
   const { fullName, phone, logout } = useAuth();
@@ -11,7 +12,6 @@ export function ProfilePage() {
     queryFn: () => walletApi.getWallet().then(r => r.data.data),
   });
 
-  const fmt = (n: number) => `KES ${n.toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
 
   return (
     <div className="px-6 pt-6">
@@ -40,14 +40,14 @@ export function ProfilePage() {
             <Wallet size={18} className="text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Wallet Balance</p>
-              <p className="text-sm font-medium">{wallet ? fmt(wallet.balance) : 'Loading...'}</p>
+              <p className="text-sm font-medium">{wallet ? formatKES(wallet.balance) : 'Loading...'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
             <Wallet size={18} className="text-gray-400" />
             <div>
               <p className="text-xs text-gray-500">Daily Transfer Limit</p>
-              <p className="text-sm font-medium">{wallet ? fmt(wallet.dailyTransferLimit) : '-'}</p>
+              <p className="text-sm font-medium">{wallet ? formatKES(wallet.dailyTransferLimit) : '-'}</p>
             </div>
           </div>
         </div>
