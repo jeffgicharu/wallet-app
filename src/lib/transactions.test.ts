@@ -61,13 +61,24 @@ describe('transactionLabel', () => {
     expect(transactionLabel(tx({ type: 'FEE', description: '' }), ME)).toBe('Transfer fee');
   });
 
-  it('reads naturally for both sides of a transfer', () => {
+  it('reads naturally for both sides of a transfer, resolving known names', () => {
+    // ME / OTHER are seeded demo numbers → resolved to first names.
     expect(
       transactionLabel(tx({ senderPhone: ME, receiverPhone: OTHER }), ME),
-    ).toBe(`Sent to ${OTHER}`);
+    ).toBe('Sent to Bob');
     expect(
       transactionLabel(tx({ senderPhone: OTHER, receiverPhone: ME }), ME),
-    ).toBe(`Received from ${OTHER}`);
+    ).toBe('Received from Bob');
+  });
+
+  it('falls back to the raw number for an unknown counterparty', () => {
+    const UNKNOWN = '+254712999888';
+    expect(
+      transactionLabel(tx({ senderPhone: ME, receiverPhone: UNKNOWN }), ME),
+    ).toBe(`Sent to ${UNKNOWN}`);
+    expect(
+      transactionLabel(tx({ senderPhone: UNKNOWN, receiverPhone: ME }), ME),
+    ).toBe(`Received from ${UNKNOWN}`);
   });
 
   it('has graceful fallbacks when phones are missing', () => {

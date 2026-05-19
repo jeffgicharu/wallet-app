@@ -1,4 +1,5 @@
 import type { Transaction } from '../types';
+import { counterpartyLabel } from './counterparty';
 
 export type Direction = 'in' | 'out';
 
@@ -46,10 +47,10 @@ export function transactionLabel(t: Transaction, myPhone: string | null): string
     case 'TRANSFER':
       return direction(t, myPhone) === 'out'
         ? t.receiverPhone
-          ? `Sent to ${t.receiverPhone}`
+          ? `Sent to ${counterpartyLabel(t.receiverPhone)}`
           : t.description || 'Money sent'
         : t.senderPhone
-          ? `Received from ${t.senderPhone}`
+          ? `Received from ${counterpartyLabel(t.senderPhone)}`
           : t.description || 'Money received';
     default:
       return t.description || t.type;

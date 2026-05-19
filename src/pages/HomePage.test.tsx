@@ -44,8 +44,9 @@ describe('HomePage', () => {
     );
     // Alice is the sender of TRF-001, so it reads as an outgoing send;
     // she is the receiver of TRF-002, so that reads as incoming.
-    expect(screen.getAllByText(/Sent to \+254700000002/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/Received from \+254700000003/i)).toBeInTheDocument();
+    // +254700000002 → Bob, +254700000003 → Carol (seeded demo users).
+    expect(screen.getAllByText(/Sent to Bob/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Received from Carol/i)).toBeInTheDocument();
     expect(screen.getByText(/Cash withdrawal/i)).toBeInTheDocument();
 
     // The standalone FEE row is folded out of the list.
