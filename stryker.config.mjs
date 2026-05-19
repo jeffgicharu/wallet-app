@@ -44,9 +44,12 @@ export default {
     'src/pages/HistoryPage.test.tsx',
     'src/pages/ProfilePage.test.tsx',
     'src/pages/NotFoundPage.test.tsx',
+    'src/pages/desktop-layout.test.tsx',
+    'src/components/Sidebar.test.tsx',
     'src/lib/money.test.ts',
     'src/lib/transactions.test.ts',
     'src/lib/idempotency.test.ts',
+    'src/lib/useMediaQuery.test.ts',
   ],
 
   // Only mutate the source files that actually have tests. Including
