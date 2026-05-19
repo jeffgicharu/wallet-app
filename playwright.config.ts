@@ -9,6 +9,15 @@ const LIVE_BASE_URL = process.env.LIVE_BASE_URL ?? 'https://wallet.jeffgicharu.c
 //   - `live-smoke` projects hit the public demo, run one-at-a-time with retries
 //     to be gentle on the deploy and resilient to Cloudflare flake.
 // Each layer fans out to chromium + firefox + webkit.
+//
+// Viewport: every UI project is pinned to a phone-sized viewport. These
+// specs characterize the mobile flow specifically (bottom-nav, a single
+// Sign Out, statement rows as <button>s with COMPLETED suppressed). The
+// app is now responsive — at >=1024px it renders the desktop layout
+// (sidebar, data table, summary panels), which is covered by the
+// `desktop-layout` vitest suite. Keeping e2e at mobile width keeps these
+// characterizations valid for the layout they were written against.
+const MOBILE_VIEWPORT = { width: 390, height: 844 };
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -28,17 +37,17 @@ export default defineConfig({
     {
       name: 'local-chromium',
       testDir: './e2e/local',
-      use: { ...devices['Desktop Chrome'], baseURL: LOCAL_BASE_URL },
+      use: { ...devices['Desktop Chrome'], viewport: MOBILE_VIEWPORT, baseURL: LOCAL_BASE_URL },
     },
     {
       name: 'local-firefox',
       testDir: './e2e/local',
-      use: { ...devices['Desktop Firefox'], baseURL: LOCAL_BASE_URL },
+      use: { ...devices['Desktop Firefox'], viewport: MOBILE_VIEWPORT, baseURL: LOCAL_BASE_URL },
     },
     {
       name: 'local-webkit',
       testDir: './e2e/local',
-      use: { ...devices['Desktop Safari'], baseURL: LOCAL_BASE_URL },
+      use: { ...devices['Desktop Safari'], viewport: MOBILE_VIEWPORT, baseURL: LOCAL_BASE_URL },
     },
 
     // ---------- live-smoke (gentle) ----------
@@ -58,7 +67,7 @@ export default defineConfig({
       dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
-      use: { ...devices['Desktop Chrome'], baseURL: LIVE_BASE_URL },
+      use: { ...devices['Desktop Chrome'], viewport: MOBILE_VIEWPORT, baseURL: LIVE_BASE_URL },
     },
     {
       name: 'live-smoke-firefox',
@@ -66,7 +75,7 @@ export default defineConfig({
       dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
-      use: { ...devices['Desktop Firefox'], baseURL: LIVE_BASE_URL },
+      use: { ...devices['Desktop Firefox'], viewport: MOBILE_VIEWPORT, baseURL: LIVE_BASE_URL },
     },
     {
       name: 'live-smoke-webkit',
@@ -74,7 +83,7 @@ export default defineConfig({
       dependencies: ['live-smoke-setup'],
       retries: 2,
       timeout: 30_000,
-      use: { ...devices['Desktop Safari'], baseURL: LIVE_BASE_URL },
+      use: { ...devices['Desktop Safari'], viewport: MOBILE_VIEWPORT, baseURL: LIVE_BASE_URL },
     },
   ],
 
