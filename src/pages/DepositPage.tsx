@@ -5,15 +5,19 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatKES } from '../lib/money';
+import { newIdempotencyKey } from '../lib/idempotency';
 
 export function DepositPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [amount, setAmount] = useState('');
   const [done, setDone] = useState(false);
+  // Stable for this deposit attempt so a retry replays rather than
+  // double-credits; the backend prefixes it as DEP-{key}.
+  const [idemKey] = useState(newIdempotencyKey);
 
   const mutation = useMutation({
-    mutationFn: () => walletApi.deposit(parseFloat(amount), 'DEP-' + Date.now()),
+    mutationFn: () => walletApi.deposit(parseFloat(amount), idemKey),
     onSuccess: () => {
       setDone(true);
       queryClient.invalidateQueries({ queryKey: ['wallet'] });

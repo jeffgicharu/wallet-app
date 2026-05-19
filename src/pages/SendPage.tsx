@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { formatKES } from '../lib/money';
+import { newIdempotencyKey } from '../lib/idempotency';
 
 type Step = 'phone' | 'amount' | 'confirm' | 'pin' | 'success';
 
@@ -23,6 +24,11 @@ export function SendPage() {
   const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
+  // One key per confirmed intent: stable across PIN retries (a
+  // lost-response retry replays the original transfer instead of
+  // double-charging), regenerated when the user re-confirms a changed
+  // amount/recipient. The backend prefixes it as TRF-{key}.
+  const [idemKey, setIdemKey] = useState('');
 
   // Daily transfer limit is enforced server-side (wallet.daily-transfer-limit
    // in wallet-api). Read the current usage so we can show a "Remaining today"
@@ -37,7 +43,7 @@ export function SendPage() {
     mutationFn: (pin: string) => walletApi.transfer(
       phone.startsWith('0') ? '+254' + phone.substring(1) : phone,
       parseFloat(amount), pin,
-      'TRF-' + Date.now()
+      idemKey
     ),
     onSuccess: (res) => {
       setReference(res.data.data.reference);
@@ -106,7 +112,7 @@ export function SendPage() {
                 <AlertCircle size={14} /> Amount + 1% fee would exceed today's transfer limit.
               </p>
             )}
-            <button onClick={() => !disabled && setStep('confirm')} disabled={disabled}
+            <button onClick={() => { if (!disabled) { setIdemKey(newIdempotencyKey()); setStep('confirm'); } }} disabled={disabled}
               className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40">
               Next
             </button>
