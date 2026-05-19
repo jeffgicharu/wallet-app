@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { formatSignedKES } from '../lib/money';
 import { direction, isFeeRow, transactionLabel } from '../lib/transactions';
 import { useIsDesktop } from '../lib/useMediaQuery';
+import { TransactionIcon } from '../components/TransactionIcon';
 
 export function HistoryPage() {
   const navigate = useNavigate();
@@ -63,8 +64,8 @@ export function HistoryPage() {
                     <td className="whitespace-nowrap px-6 py-4 text-gray-500">{fmtDate(t.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-base font-bold ${color} ${bg}`}>
-                          {dir === 'out' ? '-' : '+'}
+                        <span className={`flex h-9 w-9 items-center justify-center rounded-full ${color} ${bg}`}>
+                          <TransactionIcon t={t} dir={dir} size={16} />
                         </span>
                         <span className="font-medium text-gray-900">{transactionLabel(t, phone)}</span>
                       </div>
@@ -97,8 +98,8 @@ export function HistoryPage() {
             return (
               <button key={t.reference} onClick={() => navigate(`/history/${t.reference}`)}
                 className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${color} ${bg}`}>
-                  {dir === 'out' ? '-' : '+'}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color} ${bg}`}>
+                  <TransactionIcon t={t} dir={dir} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{transactionLabel(t, phone)}</p>

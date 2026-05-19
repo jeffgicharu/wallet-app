@@ -6,6 +6,7 @@ import { Send, Download, Upload, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { formatKES, formatSignedKES } from '../lib/money';
 import { direction, isFeeRow, transactionLabel } from '../lib/transactions';
+import { TransactionIcon } from '../components/TransactionIcon';
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -104,8 +105,8 @@ export function HomePage() {
             return (
               <button key={t.reference} onClick={() => navigate(`/history/${t.reference}`)}
                 className="flex items-center gap-3 p-4 lg:px-6 w-full text-left hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${color} bg-gray-50`}>
-                  {dir === 'out' ? '-' : '+'}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color} bg-gray-50`}>
+                  <TransactionIcon t={t} dir={dir} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{transactionLabel(t, myPhone)}</p>
