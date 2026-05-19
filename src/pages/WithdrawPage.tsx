@@ -72,7 +72,7 @@ export function WithdrawPage() {
         <ArrowLeft size={16} /> Home
       </button>
       <h2 className="text-xl font-bold text-gray-900 mb-6 lg:text-2xl">Withdraw Money</h2>
-      <div className="lg:grid lg:grid-cols-[minmax(0,30rem)_1fr] lg:gap-8 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[minmax(0,32rem)_20rem] lg:gap-8 lg:items-start">
         <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-8">
           {form}
         </div>
