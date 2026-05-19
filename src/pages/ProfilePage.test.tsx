@@ -17,6 +17,19 @@ describe('ProfilePage', () => {
     );
   });
 
+  it('lists the account-detail rows with their values', async () => {
+    renderWithProviders(<ProfilePage />, { initialEntries: ['/profile'], authenticated: auth });
+
+    expect(screen.getByRole('heading', { name: 'Profile' })).toBeInTheDocument();
+    expect(screen.getByText('Account details')).toBeInTheDocument();
+    expect(screen.getByText('Phone Number')).toBeInTheDocument();
+    expect(screen.getByText('Wallet Balance')).toBeInTheDocument();
+    expect(screen.getByText('Daily Transfer Limit')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByText(/KES\s*300,000\.00/)).toBeInTheDocument(),
+    );
+  });
+
   it('clears session storage when Sign Out is tapped', async () => {
     const user = userEvent.setup();
     renderWithProviders(<ProfilePage />, { initialEntries: ['/profile'], authenticated: auth });

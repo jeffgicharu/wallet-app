@@ -60,4 +60,58 @@ describe('HomePage', () => {
     expect(screen.getByText('+ KES 3,000.00')).toBeInTheDocument();
     expect(screen.getByText('- KES 5,000.00')).toBeInTheDocument();
   });
+
+  it('renders the exact daily-limit line from the wallet', async () => {
+    renderWithProviders(<HomePage />, { authenticated: auth });
+    await waitFor(() =>
+      expect(
+        screen.getByText('Daily limit: KES 300,000.00 (used: KES 0.00)'),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('falls back to a generic greeting when the name is empty', () => {
+    renderWithProviders(<HomePage />, {
+      authenticated: { token: 't', fullName: '', phone: '+254700000001' },
+    });
+    expect(screen.getByText('Hello, there')).toBeInTheDocument();
+  });
+
+  it('each quick action routes to its page', async () => {
+    const user = userEvent.setup();
+    for (const [label, path] of [
+      ['Send', '/send'],
+      ['Deposit', '/deposit'],
+      ['Withdraw', '/withdraw'],
+    ] as const) {
+      const { unmount } = renderWithProviders(<HomePage />, {
+        authenticated: auth,
+        extraRoutes: [{ path, element: <div>{`route-${path}`}</div> }],
+      });
+      await user.click(screen.getByRole('button', { name: label }));
+      expect(await screen.findByText(`route-${path}`)).toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('See All and a transaction row navigate into history', async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderWithProviders(<HomePage />, {
+      authenticated: auth,
+      extraRoutes: [{ path: '/history', element: <div>history-route</div> }],
+    });
+    await user.click(screen.getByRole('button', { name: 'See All' }));
+    expect(await screen.findByText('history-route')).toBeInTheDocument();
+    unmount();
+
+    renderWithProviders(<HomePage />, {
+      authenticated: auth,
+      extraRoutes: [{ path: '/history/:ref', element: <div>detail-route</div> }],
+    });
+    await waitFor(() =>
+      expect(screen.getByText(/Cash deposit/i)).toBeInTheDocument(),
+    );
+    await user.click(screen.getByText(/Cash deposit/i));
+    expect(await screen.findByText('detail-route')).toBeInTheDocument();
+  });
 });
