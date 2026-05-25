@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
@@ -97,6 +97,32 @@ describe('desktop layout — HistoryPage table', () => {
     );
     expect(screen.queryByText('Cash deposit')).not.toBeInTheDocument();
     expect(screen.queryByText('DEPOSIT')).not.toBeInTheDocument();
+  });
+
+  describe('summary strip', () => {
+    beforeAll(() => {
+      // Pin so the May-8 fixture rows fall in this month and the
+      // last-30-day window — the strip computes both off the txn list.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-05-15T12:00:00Z'));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it('shows the month transaction count and net amount on desktop', async () => {
+      renderWithProviders(<HistoryPage />, {
+        initialEntries: ['/history'],
+        authenticated: auth,
+      });
+      // 6 non-FEE rows in May → plural.
+      await waitFor(() =>
+        expect(
+          screen.getByText('6 transactions this month'),
+        ).toBeInTheDocument(),
+      );
+      // Net = 25,000 - 5,000 + 3,000 - 1,000 - 2,000 + 2,000 = 22,000 (the
+      // reversal pair cancels). Positive → green.
+      expect(screen.getByText('+ KES 22,000.00 net')).toBeInTheDocument();
+    });
   });
 });
 

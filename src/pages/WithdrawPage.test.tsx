@@ -45,4 +45,16 @@ describe('WithdrawPage', () => {
       expect(screen.getByText(/Withdrawal Successful/i)).toBeInTheDocument(),
     );
   });
+
+  it('clicking a quick-amount chip fills the amount input', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<WithdrawPage />, { initialEntries: ['/withdraw'], authenticated: auth });
+    // The chips match Deposit's set: 500, 1,000, 5,000, 10,000.
+    for (const v of ['500', '1,000', '5,000', '10,000'] as const) {
+      expect(screen.getByRole('button', { name: v })).toBeInTheDocument();
+    }
+    await user.click(screen.getByRole('button', { name: '5,000' }));
+    expect(screen.getByPlaceholderText('0.00')).toHaveValue(5000);
+    expect(screen.getByRole('button', { name: 'Withdraw' })).toBeEnabled();
+  });
 });

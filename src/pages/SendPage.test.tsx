@@ -189,4 +189,20 @@ describe('SendPage', () => {
     const results = await axe(container);
     expect(results).toHaveNoViolations();
   });
+
+  it('lists recent recipient chips and a chip pre-fills the phone input', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SendPage />, { initialEntries: ['/send'], authenticated: auth });
+
+    // MSW fixture has Alice → Bob transfers twice (TRF-001 + TRF-009),
+    // resolved by the counterparty roster to "Bob".
+    expect(await screen.findByText('Recent recipients')).toBeInTheDocument();
+    const bob = screen.getByRole('button', { name: 'Bob' });
+    expect(bob).toBeInTheDocument();
+
+    await user.click(bob);
+    // Phone input prefilled in local "07.." format (the +254 prefix is
+    // converted by toLocalPhoneFormat — 700000002 -> 0700000002).
+    expect(screen.getByPlaceholderText(/0712/)).toHaveValue('0700000002');
+  });
 });
