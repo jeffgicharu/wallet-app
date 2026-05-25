@@ -41,8 +41,8 @@ export function HistoryPage() {
     <div className="px-6 pt-6 lg:px-0 lg:pt-4">
       <div className="mb-5 flex flex-wrap items-baseline gap-x-6 gap-y-2 lg:mb-6">
         <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">Transaction History</h2>
-        {rows.length > 0 && (
-          <p className="hidden lg:block text-sm text-gray-500">
+        {isDesktop && rows.length > 0 && (
+          <p className="text-sm text-gray-500">
             {monthCount} transaction{monthCount === 1 ? '' : 's'} this month
             <span className="mx-2 text-gray-300">·</span>
             <span className={monthNet === 0 ? 'text-gray-500' : monthNet > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>

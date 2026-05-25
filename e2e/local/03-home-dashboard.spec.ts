@@ -19,8 +19,13 @@ test.describe('03 — home dashboard', () => {
     await expect(page.locator('p', { hasText: /^KES\s/ }).first()).toBeVisible();
   });
 
-  test('daily limit line is visible', async ({ page }) => {
-    await expect(page.getByText(/Daily limit:/)).toBeVisible();
+  test('daily transfer limit panel is visible', async ({ page }) => {
+    // The "Daily limit: X (used Y)" text line was replaced by a labelled
+    // progress bar with the used/limit value beside it.
+    await expect(page.getByText('Daily transfer limit')).toBeVisible();
+    await expect(
+      page.getByRole('progressbar', { name: /Daily transfer limit used/i }),
+    ).toBeVisible();
   });
 
   test('Send, Deposit, Withdraw quick-action buttons are visible', async ({ page }) => {
