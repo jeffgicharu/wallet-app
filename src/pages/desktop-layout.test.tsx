@@ -195,7 +195,10 @@ describe('desktop layout — Transaction detail', () => {
       { initialEntries: ['/history/TRF-xyz'] },
     );
 
-    expect(await screen.findByText('TRF-xyz')).toBeInTheDocument();
+    // Reference shows in the receipt body AND in the about-panel mini-list.
+    await waitFor(() =>
+      expect(screen.getAllByText('TRF-xyz').length).toBeGreaterThanOrEqual(2),
+    );
     // Alice is the sender → outgoing → signed minus.
     expect(screen.getByText('- KES 4,200.00')).toBeInTheDocument();
     expect(screen.getByText('Rent share')).toBeInTheDocument();
@@ -208,7 +211,11 @@ describe('desktop layout — Transaction detail', () => {
     expect(
       screen.getByText('Bob · +254700000002'),
     ).toBeInTheDocument(); // To
-    expect(screen.getByText(/This is a completed transfer\./)).toBeInTheDocument();
+    // Outgoing TRANSFER to Bob → about sentence names the counterparty
+    // and the debit direction.
+    expect(
+      screen.getByText(/Transfer to Bob\. The amount has been debited/),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back to history' }));
     expect(await screen.findByText('history-list-route')).toBeInTheDocument();

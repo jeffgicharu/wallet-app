@@ -57,6 +57,12 @@ export function WithdrawPage() {
       <label className="block text-sm font-medium text-gray-700 mb-2">Amount (KES)</label>
       <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" autoFocus
         className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-2xl text-center font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
+      <div className="flex gap-2 mt-4">
+        {[500, 1000, 5000, 10000].map(v => (
+          <button key={v} type="button" onClick={() => setAmount(String(v))}
+            className="flex-1 py-2 bg-gray-100 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">{v.toLocaleString()}</button>
+        ))}
+      </div>
       <button onClick={() => setShowPin(true)} disabled={!amount || amountNum < 10}
         className="w-full mt-6 py-3.5 bg-orange-600 text-white rounded-2xl font-medium disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500">
         Withdraw
@@ -73,7 +79,7 @@ export function WithdrawPage() {
       </button>
       <h2 className="text-xl font-bold text-gray-900 mb-6 lg:text-2xl">Withdraw Money</h2>
       <div className="lg:grid lg:grid-cols-[minmax(0,32rem)_20rem] lg:gap-8 lg:items-start">
-        <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-8">
+        <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-6">
           {form}
         </div>
         {isDesktop && (

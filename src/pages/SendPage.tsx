@@ -8,6 +8,9 @@ import toast from 'react-hot-toast';
 import { formatKES } from '../lib/money';
 import { newIdempotencyKey } from '../lib/idempotency';
 import { useIsDesktop } from '../lib/useMediaQuery';
+import { isFeeRow } from '../lib/transactions';
+import { topOutgoingRecipients } from '../lib/homeStats';
+import { counterpartyLabel } from '../lib/counterparty';
 
 type Step = 'phone' | 'amount' | 'confirm' | 'pin' | 'success';
 
@@ -40,6 +43,25 @@ export function SendPage() {
     queryFn: () => walletApi.getWallet().then(r => r.data.data),
     staleTime: 15_000,
   });
+
+  // Shared with the Home recent list — the cache hit means navigating
+  // /send rarely costs an extra round-trip. Drives the "Recent
+  // recipients" chips on the phone step.
+  const { data: txns } = useQuery({
+    queryKey: ['recent-txns'],
+    queryFn: () =>
+      walletApi
+        .getTransactions(0, 100)
+        .then(r => r.data.data.content.filter(t => !isFeeRow(t))),
+    staleTime: 15_000,
+  });
+
+  const myPhone = wallet?.phoneNumber ?? null;
+  const recentRecipients = txns ? topOutgoingRecipients(txns, myPhone, 3) : [];
+  // The phone input expects the local "07.." format; convert when a
+  // chip prefills from a stored +254 number.
+  const toLocalPhoneFormat = (p: string) =>
+    p.startsWith('+254') ? '0' + p.slice(4) : p;
 
   const mutation = useMutation({
     mutationFn: (pin: string) => walletApi.transfer(
@@ -74,6 +96,23 @@ export function SendPage() {
           <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
             placeholder="0712 345 678" autoFocus
             className="w-full px-4 py-3.5 border border-gray-300 rounded-2xl text-lg focus:ring-2 focus:ring-indigo-500 outline-none" />
+          {recentRecipients.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-medium text-gray-500 mb-2">Recent recipients</p>
+              <div className="flex flex-wrap gap-2">
+                {recentRecipients.map(r => (
+                  <button
+                    key={r.phone}
+                    type="button"
+                    onClick={() => setPhone(toLocalPhoneFormat(r.phone))}
+                    className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  >
+                    {counterpartyLabel(r.phone)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <button onClick={() => phone.length >= 10 && setStep('amount')} disabled={phone.length < 10}
             className="w-full mt-6 py-3.5 bg-indigo-600 text-white rounded-2xl font-medium disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
             Next
@@ -164,7 +203,7 @@ export function SendPage() {
         </div>
       ) : (
         <div className="lg:grid lg:grid-cols-[minmax(0,32rem)_20rem] lg:gap-8 lg:items-start">
-          <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-8">
+          <div className="lg:rounded-2xl lg:border lg:border-gray-100 lg:bg-white lg:p-6">
             {stepBody}
           </div>
           {isDesktop && (

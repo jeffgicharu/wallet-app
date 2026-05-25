@@ -60,7 +60,7 @@ export function TransactionDetailPage() {
 
       {data && (
         <div className="lg:grid lg:grid-cols-[minmax(0,36rem)_20rem] lg:gap-8 lg:items-start">
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 lg:p-7">
             <div className="text-center mb-6">
               <p
                 className={`text-3xl font-bold ${
@@ -118,16 +118,24 @@ export function TransactionDetailPage() {
           </div>
 
           {isDesktop && (
-            <aside className="rounded-2xl border border-gray-100 bg-white p-6">
+            <aside className="rounded-2xl border border-gray-100 bg-white p-5">
               <h3 className="text-sm font-semibold text-gray-900">About this transaction</h3>
-              <p className="mt-3 text-sm text-gray-500">
-                This is a {data.status.toLowerCase()} {data.type.toLowerCase()}.
-                Keep the reference for your records — quote it if you need
-                support with this transaction.
+              <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+                {aboutSentence(data, phone)}
               </p>
+              <dl className="mt-4 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Logged</dt>
+                  <dd className="text-gray-700">{fmtDate(data.createdAt)}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Reference</dt>
+                  <dd className="font-mono text-gray-700">{data.reference}</dd>
+                </div>
+              </dl>
               <button
                 onClick={() => navigate('/history')}
-                className="mt-6 w-full rounded-2xl border border-gray-200 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                className="mt-5 w-full rounded-2xl border border-gray-200 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               >
                 Back to history
               </button>
@@ -137,4 +145,32 @@ export function TransactionDetailPage() {
       )}
     </div>
   );
+}
+
+// A type/direction-aware summary line for the desktop about panel.
+// Uses the counterparty resolver so a known number reads as a name.
+function aboutSentence(
+  t: import('../types').Transaction,
+  myPhone: string | null,
+): string {
+  if (t.reference.startsWith('REV-')) {
+    return 'This entry reverses a previous transaction. The amount has been credited back to the affected wallet.';
+  }
+  const status = t.status.toLowerCase();
+  if (t.type === 'DEPOSIT') {
+    return `This is a ${status} deposit credited to your wallet. Keep the reference for your records.`;
+  }
+  if (t.type === 'WITHDRAWAL') {
+    return `This is a ${status} cash withdrawal from your wallet. Keep the reference for your records.`;
+  }
+  if (t.type === 'TRANSFER') {
+    const dir = direction(t, myPhone);
+    if (dir === 'out' && t.receiverPhone) {
+      return `Transfer to ${counterpartyName(t.receiverPhone) ?? t.receiverPhone}. ${status === 'completed' ? 'The amount has been debited from your wallet.' : `Currently ${status}.`}`;
+    }
+    if (dir === 'in' && t.senderPhone) {
+      return `Transfer received from ${counterpartyName(t.senderPhone) ?? t.senderPhone}. ${status === 'completed' ? 'The amount has been credited to your wallet.' : `Currently ${status}.`}`;
+    }
+  }
+  return `This is a ${status} ${t.type.toLowerCase()}. Keep the reference for your records.`;
 }
