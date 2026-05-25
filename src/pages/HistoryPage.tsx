@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { walletApi } from '../api/wallet';
 import { useAuth } from '../context/AuthContext';
-import { formatSignedKES } from '../lib/money';
+import { formatKES, formatSignedKES } from '../lib/money';
 import { direction, isFeeRow, transactionLabel } from '../lib/transactions';
+import { lastNDaysNet, monthlyTransactionCount } from '../lib/homeStats';
 import { useIsDesktop } from '../lib/useMediaQuery';
 import { TransactionIcon } from '../components/TransactionIcon';
 
@@ -25,9 +26,31 @@ export function HistoryPage() {
 
   const rows = data || [];
 
+  // Desktop summary strip — gives the page some weight before the table
+  // and surfaces useful aggregate info computed from the same list.
+  const monthCount = monthlyTransactionCount(rows);
+  const monthNet = lastNDaysNet(rows, phone, 30);
+  const netSignLabel =
+    monthNet === 0
+      ? formatKES(0)
+      : monthNet > 0
+        ? `+ ${formatKES(monthNet)}`
+        : `- ${formatKES(Math.abs(monthNet))}`;
+
   return (
     <div className="px-6 pt-6 lg:px-0 lg:pt-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 lg:text-2xl">Transaction History</h2>
+      <div className="mb-5 flex flex-wrap items-baseline gap-x-6 gap-y-2 lg:mb-6">
+        <h2 className="text-xl font-bold text-gray-900 lg:text-2xl">Transaction History</h2>
+        {isDesktop && rows.length > 0 && (
+          <p className="text-sm text-gray-500">
+            {monthCount} transaction{monthCount === 1 ? '' : 's'} this month
+            <span className="mx-2 text-gray-300">·</span>
+            <span className={monthNet === 0 ? 'text-gray-500' : monthNet > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+              {netSignLabel} net
+            </span>
+          </p>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="space-y-3">
@@ -61,22 +84,22 @@ export function HistoryPage() {
                     onKeyDown={e => { if (e.key === 'Enter') navigate(`/history/${t.reference}`); }}
                     className="cursor-pointer transition-colors hover:bg-gray-50 focus:outline-none focus-visible:bg-indigo-50"
                   >
-                    <td className="whitespace-nowrap px-6 py-4 text-gray-500">{fmtDate(t.createdAt)}</td>
-                    <td className="px-6 py-4">
+                    <td className="whitespace-nowrap px-6 py-3 text-gray-500">{fmtDate(t.createdAt)}</td>
+                    <td className="px-6 py-3">
                       <div className="flex items-center gap-3">
-                        <span className={`flex h-9 w-9 items-center justify-center rounded-full ${color} ${bg}`}>
-                          <TransactionIcon t={t} dir={dir} size={16} />
+                        <span className={`flex h-8 w-8 items-center justify-center rounded-full ${color} ${bg}`}>
+                          <TransactionIcon t={t} dir={dir} size={14} />
                         </span>
                         <span className="font-medium text-gray-900">{transactionLabel(t, phone)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-500">{t.type}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-3 text-gray-500">{t.type}</td>
+                    <td className="px-6 py-3">
                       <span className={t.status === 'COMPLETED' ? 'text-gray-500' : t.status === 'PENDING' ? 'text-amber-600' : 'text-red-600'}>
                         {t.status}
                       </span>
                     </td>
-                    <td className={`whitespace-nowrap px-6 py-4 text-right font-semibold ${color}`}>
+                    <td className={`whitespace-nowrap px-6 py-3 text-right font-semibold ${color}`}>
                       {formatSignedKES(t.amount, dir)}
                     </td>
                   </tr>
@@ -97,7 +120,7 @@ export function HistoryPage() {
             const bg = dir === 'out' ? 'bg-red-50' : 'bg-green-50';
             return (
               <button key={t.reference} onClick={() => navigate(`/history/${t.reference}`)}
-                className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
+                className="flex items-center gap-3 px-4 py-3 w-full text-left hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${color} ${bg}`}>
                   <TransactionIcon t={t} dir={dir} />
                 </div>

@@ -30,4 +30,24 @@ describe('counterparty resolution', () => {
     expect(counterpartyLabel(null)).toBe('Unknown');
     expect(counterpartyLabel(undefined)).toBe('Unknown');
   });
+
+  // Pin every seeded entry so a stray edit to the directory (a renamed
+  // contact, a typo, an empty-string mutation) gets caught instead of
+  // landing silently on a label that "looks fine".
+  it.each([
+    ['+254700000001', 'Alice'],
+    ['+254700000002', 'Bob'],
+    ['+254700000003', 'Carol'],
+    ['+254711100201', 'James Mwangi'],
+    ['+254711100202', 'Mary Njeri'],
+    ['+254711100203', 'John Otieno'],
+    ['+254711100204', 'Grace Achieng'],
+    ['+254711100205', 'Peter Kamau'],
+    ['+254711100206', 'Faith Chebet'],
+    ['+254711100207', 'Daniel Kiprop'],
+    ['+254711100208', 'Sarah Wambui'],
+  ])('resolves the seeded entry %s -> %s', (phone, name) => {
+    expect(counterpartyName(phone)).toBe(name);
+    expect(counterpartyLabel(phone)).toBe(name);
+  });
 });

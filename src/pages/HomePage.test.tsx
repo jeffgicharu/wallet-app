@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HomePage } from './HomePage';
@@ -62,13 +62,47 @@ describe('HomePage', () => {
     expect(screen.getByText('- KES 5,000.00')).toBeInTheDocument();
   });
 
-  it('renders the exact daily-limit line from the wallet', async () => {
+  it('renders the daily-limit progress bar from the wallet', async () => {
     renderWithProviders(<HomePage />, { authenticated: auth });
     await waitFor(() =>
-      expect(
-        screen.getByText('Daily limit: KES 300,000.00 (used: KES 0.00)'),
-      ).toBeInTheDocument(),
+      expect(screen.getByText('Daily transfer limit')).toBeInTheDocument(),
     );
+    expect(screen.getByText('KES 0.00 / KES 300,000.00')).toBeInTheDocument();
+    const bar = screen.getByRole('progressbar', { name: /Daily transfer limit used/i });
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+  });
+
+  describe('desktop stat tiles', () => {
+    beforeAll(() => {
+      // Mock only Date — leave setTimeout/setInterval running so MSW
+      // and react-query keep working. Pin to 2026-05-13 so the MSW
+      // fixture's 2026-05-08 transactions fall inside the "last 7 days"
+      // window. The fixture's monthly total is 6 non-fee rows.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-05-13T12:00:00Z'));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it('shows Today / This week / This month with real values', async () => {
+      renderWithProviders(<HomePage />, { authenticated: auth });
+      // Tile labels are present.
+      expect(await screen.findByText('Today')).toBeInTheDocument();
+      expect(screen.getByText('This week (net)')).toBeInTheDocument();
+      expect(screen.getByText('This month')).toBeInTheDocument();
+
+      // No fixture txn dated 2026-05-13 → quiet empty label.
+      expect(screen.getByText('No activity today')).toBeInTheDocument();
+
+      // Week net = 25,000 - 5,000 + 3,000 - 1,000 - 2,000 + 2,000 = 22,000
+      // (reversal pair cancels). Positive → green.
+      await waitFor(() =>
+        expect(screen.getByText('+ KES 22,000.00')).toBeInTheDocument(),
+      );
+
+      // Six non-fee transactions in May (the standalone FEE row is folded).
+      expect(screen.getByText('6')).toBeInTheDocument();
+      expect(screen.getByText('transactions')).toBeInTheDocument();
+    });
   });
 
   it('falls back to a generic greeting when the name is empty', () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
@@ -98,6 +98,32 @@ describe('desktop layout — HistoryPage table', () => {
     expect(screen.queryByText('Cash deposit')).not.toBeInTheDocument();
     expect(screen.queryByText('DEPOSIT')).not.toBeInTheDocument();
   });
+
+  describe('summary strip', () => {
+    beforeAll(() => {
+      // Pin so the May-8 fixture rows fall in this month and the
+      // last-30-day window — the strip computes both off the txn list.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-05-15T12:00:00Z'));
+    });
+    afterAll(() => vi.useRealTimers());
+
+    it('shows the month transaction count and net amount on desktop', async () => {
+      renderWithProviders(<HistoryPage />, {
+        initialEntries: ['/history'],
+        authenticated: auth,
+      });
+      // 6 non-FEE rows in May → plural.
+      await waitFor(() =>
+        expect(
+          screen.getByText('6 transactions this month'),
+        ).toBeInTheDocument(),
+      );
+      // Net = 25,000 - 5,000 + 3,000 - 1,000 - 2,000 + 2,000 = 22,000 (the
+      // reversal pair cancels). Positive → green.
+      expect(screen.getByText('+ KES 22,000.00 net')).toBeInTheDocument();
+    });
+  });
 });
 
 describe('desktop layout — Deposit summary panel', () => {
@@ -195,7 +221,10 @@ describe('desktop layout — Transaction detail', () => {
       { initialEntries: ['/history/TRF-xyz'] },
     );
 
-    expect(await screen.findByText('TRF-xyz')).toBeInTheDocument();
+    // Reference shows in the receipt body AND in the about-panel mini-list.
+    await waitFor(() =>
+      expect(screen.getAllByText('TRF-xyz').length).toBeGreaterThanOrEqual(2),
+    );
     // Alice is the sender → outgoing → signed minus.
     expect(screen.getByText('- KES 4,200.00')).toBeInTheDocument();
     expect(screen.getByText('Rent share')).toBeInTheDocument();
@@ -208,7 +237,11 @@ describe('desktop layout — Transaction detail', () => {
     expect(
       screen.getByText('Bob · +254700000002'),
     ).toBeInTheDocument(); // To
-    expect(screen.getByText(/This is a completed transfer\./)).toBeInTheDocument();
+    // Outgoing TRANSFER to Bob → about sentence names the counterparty
+    // and the debit direction.
+    expect(
+      screen.getByText(/Transfer to Bob\. The amount has been debited/),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back to history' }));
     expect(await screen.findByText('history-list-route')).toBeInTheDocument();
